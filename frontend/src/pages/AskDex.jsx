@@ -133,6 +133,51 @@ function isKeyboardSmashOrGibberish(str) {
   return false;
 }
 
+const POKEMON_TYPES_SET = new Set([
+  'normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground',
+  'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'steel', 'dark', 'fairy', 'stellar'
+]);
+
+const POKEMON_KEYWORDS_SET = new Set([
+  'stat', 'stats', 'hp', 'attack', 'defense', 'speed', 'bst', 'nature', 'iv', 'ev',
+  'ability', 'abilities', 'move', 'moves', 'moveset', 'type', 'types', 'typing',
+  'weakness', 'weaknesses', 'resist', 'resistance', 'immune', 'immunity', 'effective',
+  'counter', 'counters', 'matchup', 'matchups', 'vs', 'versus', 'compare', 'comparison',
+  'team', 'squad', 'lineup', 'lead', 'sweeper', 'tank', 'pivot', 'wall', 'hazard',
+  'evolution', 'evolve', 'evolves', 'pre-evolution', 'pokedex', 'dex', 'lore', 'species',
+  'shiny', 'legendary', 'mythical', 'paradox', 'gym', 'trainer', 'battle', 'catch',
+  'generation', 'gen', 'kanto', 'johto', 'hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea',
+  'hello', 'hi', 'hey', 'greetings', 'help', 'who are you', 'what can you do'
+]);
+
+function isInvalidOrOutOfScopeQuery(str) {
+  if (!str || typeof str !== 'string') return true;
+  const clean = str.trim().toLowerCase();
+  if (clean.length < 2) return true;
+
+  // Keyboard smash or noise patterns
+  if (isKeyboardSmashOrGibberish(clean)) return true;
+
+  // Extract alphanumeric words
+  const tokens = clean.match(/[a-z0-9-]+/g) || [];
+  if (tokens.length === 0) return true;
+
+  // Check if any word matches a canonical Pokemon (or 1-2 typo allowance)
+  const hasPokemon = tokens.some((t) => t.length >= 3 && findClosestPokemon(t) !== null);
+  if (hasPokemon) return false;
+
+  // Check if any word is a Pokemon type
+  const hasType = tokens.some((t) => POKEMON_TYPES_SET.has(t));
+  if (hasType) return false;
+
+  // Check if any word matches battle/game keywords
+  const hasKeyword = tokens.some((t) => POKEMON_KEYWORDS_SET.has(t));
+  if (hasKeyword) return false;
+
+  // If the query mentions no Pokemon, no types, and no game mechanics, it is outside scope
+  return true;
+}
+
 function formatContentType(type) {
   if (!type) return 'Field Record';
   return type
@@ -281,17 +326,17 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       text: query,
     };
 
-    // 1. Keyboard Smash / Gibberish / Noise Check:
-    if (isKeyboardSmashOrGibberish(query)) {
+    // 1. Keyboard Smash / Gibberish / Out-of-Scope Noise Check:
+    if (isInvalidOrOutOfScopeQuery(query)) {
       setMessages((prev) => [
         ...prev,
         userMessage,
         {
           id: `a-${Date.now()}`,
           role: 'assistant',
-          text: `"${query}" is outside the canonical Pokémon game records.`,
+          text: `"${query}" is outside the canonical Pokémon game records. Please enter a valid Pokémon name, battle matchup, or strategy question.`,
           sources: [],
-          is_unanswerable: false,
+          is_unanswerable: true,
           is_gibberish: true,
           detected_entities: [],
           comparison_data: null,
@@ -301,9 +346,9 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       return;
     }
 
-    // Extract recent conversation history for context memory (last 6 valid turns)
+    // Extract recent conversation history for context memory (only valid turns, exclude unanswerable/errors)
     const historyPayload = messages
-      .filter((m) => m.id !== 'welcome' && !m.is_error && !m.is_gibberish && m.text)
+      .filter((m) => m.id !== 'welcome' && !m.is_error && !m.is_gibberish && !m.is_unanswerable && m.text)
       .slice(-6)
       .map((m) => ({
         role: m.role,
@@ -427,7 +472,9 @@ export default function AskDex({ onCitationClick, initialQuery }) {
 
       // 3. Single Pokémon / Lore Query Handling when Backend Abstains
       const hasAbstention = isAbstentionText(finalText);
-      if (!isVsQuery && detectedEntities.length > 0 && hasAbstention) {
+      if (hasAbstention || finalUnanswerable) {
+        finalUnanswerable = true;
+        finalSources = [];
         // If backend already generated a valid Pokémon response after the abstention
         const howeverIndex = finalText.indexOf('\n\nHowever,');
         const secondaryHeaderIndex = howeverIndex !== -1 ? howeverIndex : finalText.indexOf('\n\n###');
@@ -436,20 +483,6 @@ export default function AskDex({ onCitationClick, initialQuery }) {
           const validPart = finalText.slice(secondaryHeaderIndex).trim();
           finalText = validPart.replace(/^However,\s*/i, '');
           finalUnanswerable = false;
-        } else {
-          // Query the database directly to eliminate the abstention for canonical Pokémon (Gen 2-9)
-          try {
-            const pkRes = await fetchPokemonList({ search: detectedEntities[0], limit: 1 });
-            if (pkRes?.results && pkRes.results.length > 0) {
-              const matchedPk = pkRes.results.find(
-                (p) => p.name.toLowerCase() === detectedEntities[0].toLowerCase()
-              ) || pkRes.results[0];
-              finalText = generatePokemonDossier(matchedPk);
-              finalUnanswerable = false;
-            }
-          } catch (pkErr) {
-            console.warn('Fallback detail fetch note:', pkErr);
-          }
         }
       }
 
@@ -479,46 +512,15 @@ export default function AskDex({ onCitationClick, initialQuery }) {
           {
             id: `a-${Date.now()}`,
             role: 'assistant',
-            text: `"${query}" is outside the canonical Pokémon game records.`,
+            text: `"${query}" is outside the canonical Pokémon game records. Please enter a valid Pokémon name, battle matchup, or strategy question.`,
             sources: [],
-            is_unanswerable: false,
+            is_unanswerable: true,
             is_gibberish: true,
             detected_entities: [],
             comparison_data: null,
           },
         ]);
       } else {
-        // Check if query had a recognizable Pokémon entity that can still be answered
-        const knownKanto = [
-          'pikachu', 'charizard', 'blastoise', 'venusaur', 'mewtwo', 'mew', 'gengar',
-          'lucario', 'greninja', 'garchomp', 'eevee', 'snorlax', 'dragonite', 'gyarados', 'alakazam',
-          'machamp', 'arcanine', 'lapras', 'zapdos', 'articuno', 'moltres', 'raichu'
-        ];
-        const lowerQ = query.toLowerCase();
-        const foundPokemon = knownKanto.filter((p) => lowerQ.includes(p));
-
-        if (foundPokemon.length > 0) {
-          try {
-            const fallbackData = await askQuestion(
-              `Provide battle overview, stats, and type matchups for ${foundPokemon.join(' and ')}`
-            );
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `a-${Date.now()}`,
-                role: 'assistant',
-                text: cleanOutOfContextText(fallbackData.answer),
-                sources: fallbackData.sources || [],
-                is_unanswerable: false,
-                detected_entities: foundPokemon,
-              },
-            ]);
-            return;
-          } catch (fallbackErr) {
-            // fallback
-          }
-        }
-
         setMessages((prev) => [
           ...prev,
           {
@@ -527,6 +529,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
             text: cleanErrorMessage(err),
             sources: [],
             is_error: true,
+            is_unanswerable: true,
           },
         ]);
       }
@@ -612,7 +615,9 @@ export default function AskDex({ onCitationClick, initialQuery }) {
           {messages.map((m) => {
             const isUser = m.role === 'user';
             const isGibberish = Boolean(m.is_gibberish);
-            const discussedPokemon = !isUser && !m.is_error && !isGibberish ? extractMessagePokemon(m) : [];
+            const isUnanswerable = Boolean(m.is_unanswerable);
+            const isError = Boolean(m.is_error);
+            const discussedPokemon = !isUser && !isError && !isGibberish && !isUnanswerable ? extractMessagePokemon(m) : [];
 
             // Deduplicate sources by pokemon_name and content_type
             const uniqueSources = [];
@@ -647,8 +652,10 @@ export default function AskDex({ onCitationClick, initialQuery }) {
                   className={`max-w-[85%] text-sm sm:text-base leading-relaxed relative ${
                     isUser
                       ? 'bg-[#0f172a] text-slate-100 p-4 sm:p-5 border-2 border-sky-500/60 font-medium shadow-sm'
-                      : m.is_error
+                      : isError || isGibberish
                       ? 'bg-red-950/40 border-2 border-red-500 text-red-200 p-4 sm:p-5'
+                      : isUnanswerable
+                      ? 'bg-amber-950/30 border-2 border-amber-500/80 text-amber-200 p-4 sm:p-5'
                       : 'bg-[#0f172a] border-2 border-[#334155] border-l-4 border-l-yellow-400 text-slate-100 p-4 sm:p-5 shadow-sm'
                   }`}
                 >
@@ -836,7 +843,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
                   )}
 
                   {/* Clean Sources Section */}
-                  {!isUser && !m.is_error && !isGibberish && uniqueSources.length > 0 && (
+                  {!isUser && !isError && !isGibberish && !isUnanswerable && uniqueSources.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-[#334155]">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-amber-400 font-bold">

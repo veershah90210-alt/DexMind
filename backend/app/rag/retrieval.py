@@ -167,6 +167,13 @@ def retrieve_evidence(
     """
     analysis: QueryAnalysis = route_query(query, history=history)
 
+    if analysis.category == "out_of_scope":
+        return {
+            "analysis": analysis.to_dict(),
+            "total_candidates": 0,
+            "selected_chunks": []
+        }
+
     selected_chunks = []
     seen_ids = set()
 

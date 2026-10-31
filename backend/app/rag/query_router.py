@@ -47,6 +47,92 @@ if _names_file.exists():
     except Exception as _ex:
         logger.warning(f"Could not load all_pokemon_names.json: {_ex}")
 
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """Calculates Levenshtein edit distance between two strings."""
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+    if len(s2) == 0:
+        return len(s1)
+    prev = list(range(len(s2) + 1))
+    for i, c1 in enumerate(s1):
+        curr = [i + 1]
+        for j, c2 in enumerate(s2):
+            ins = prev[j + 1] + 1
+            dele = curr[j] + 1
+            sub = prev[j] + (0 if c1 == c2 else 1)
+            curr.append(min(ins, dele, sub))
+        prev = curr
+    return prev[-1]
+
+def match_closest_pokemon(word: str) -> Optional[str]:
+    """Matches a word against all canonical Pokémon with up to 1-2 typo allowance."""
+    w = word.strip().lower()
+    if len(w) < 3:
+        return None
+    if w in ALL_POKEMON_SET:
+        return w.replace("-", " ").title()
+    max_dist = 1 if len(w) <= 4 else 2
+    for p in ALL_POKEMON_SET:
+        if abs(len(w) - len(p)) > max_dist:
+            continue
+        if levenshtein_distance(w, p) <= max_dist:
+            return p.replace("-", " ").title()
+    return None
+
+POKEMON_TYPES = {
+    "normal", "fire", "water", "grass", "electric", "ice", "fighting", "poison", "ground",
+    "flying", "psychic", "bug", "rock", "ghost", "dragon", "steel", "dark", "fairy", "stellar"
+}
+
+POKEMON_GAME_KEYWORDS = [
+    "stat", "stats", "hp", "attack", "defense", "speed", "sp atk", "sp def", "special attack", "special defense",
+    "bst", "base stat", "base stats", "iv", "ev", "nature", "ability", "abilities", "hidden ability",
+    "move", "moves", "moveset", "type", "types", "typing", "weakness", "weaknesses", "weak to", "resist",
+    "resistance", "immune", "immunity", "effective", "effectiveness", "super effective", "counter", "counters",
+    "matchup", "matchups", "vs", "versus", "compare", "comparison", "team", "teams", "squad", "roster",
+    "lineup", "lead", "sweeper", "tank", "pivot", "wall", "hazard", "stealth rock", "spikes", "toxic",
+    "status", "burn", "paralyze", "paralysis", "sleep", "freeze", "crit", "critical hit", "damage", "stab",
+    "item", "items", "held item", "mega", "mega evolution", "dynamax", "gigantamax", "terastal", "tera",
+    "tier", "smogon", "ubers", "ou", "uu", "ru", "nu", "vgc", "generation", "gen 1", "gen 2", "gen 3",
+    "gen 4", "gen 5", "gen 6", "gen 7", "gen 8", "gen 9", "kanto", "johto", "hoenn", "sinnoh", "unova",
+    "kalos", "alola", "galar", "paldea", "hisui", "pokedex", "pokédex", "evolution", "evolve", "evolves",
+    "pre-evolution", "shiny", "legendary", "mythical", "paradox", "ultra beast", "gym", "gym leader",
+    "elite four", "champion", "trainer", "battle", "catch", "caught", "pokemon", "pokémon"
+]
+
+CONVERSATIONAL_KEYWORDS = [
+    "hello", "hi", "hey", "greetings", "help", "who are you", "what can you do", "commands", "clear", "reset", "thanks", "thank you"
+]
+
+def is_pokemon_domain_query(query: str, found_pokemon: List[str]) -> bool:
+    """Verifies whether the inquiry pertains to the Pokémon domain."""
+    if found_pokemon:
+        return True
+
+    q_lower = query.lower()
+    words = re.findall(r'\b[a-z0-9-]+\b', q_lower)
+    if not words:
+        return False
+
+    # Check for single word or token typo match with any canonical pokemon
+    for w in words:
+        if len(w) >= 3 and match_closest_pokemon(w):
+            return True
+
+    # Check for elemental types
+    if any(re.search(r'\b' + re.escape(t) + r'\b', q_lower) for t in POKEMON_TYPES):
+        return True
+
+    # Check for battle and game terminology
+    if any(re.search(r'\b' + re.escape(k) + r'\b', q_lower) for k in POKEMON_GAME_KEYWORDS):
+        return True
+
+    # Check for conversational greeting or help command
+    if any(re.search(r'\b' + re.escape(g) + r'\b', q_lower) for g in CONVERSATIONAL_KEYWORDS):
+        return True
+
+    return False
+
 class QueryAnalysis:
     def __init__(
         self,
@@ -76,14 +162,22 @@ def contextualize_query(query: str, history: Optional[List[Dict[str, str]]] = No
     if not history or len(history) == 0:
         return query
 
+    query_lower = query.lower()
+
+    # Do not contextualize if the query already explicitly mentions a canonical Pokemon name
+    for p in sorted(ALL_POKEMON_SET, key=len, reverse=True):
+        pattern = r'\b' + re.escape(p) + r'\b'
+        if re.search(pattern, query_lower):
+            return query
+
     cues = [
         "such", "these", "those", "them", "they", "it", "its", "both", "all of them",
         "build me", "recommend", "what about", "and what about", "how about", "their",
         "more like", "similar", "instead", "which one", "who is faster", "who is stronger",
-        "another one", "other pokemon", "same"
+        "another one", "other pokemon", "same", "who wins", "who is better", "how to counter",
+        "what counters", "why", "what are its stats", "what is its type", "can it learn"
     ]
-    query_lower = query.lower()
-    has_cue = any(re.search(r'\b' + re.escape(c) + r'\b', query_lower) for c in cues) or len(query.split()) <= 4
+    has_cue = any(re.search(r'\b' + re.escape(c) + r'\b', query_lower) for c in cues)
 
     if not has_cue:
         return query
@@ -103,6 +197,7 @@ def contextualize_query(query: str, history: Optional[List[Dict[str, str]]] = No
             f"Given the conversation history below and a follow-up user message, rewrite the follow-up message "
             f"into a single, complete standalone search query for a Pokémon database that preserves all context and resolves references "
             f"(such as 'such pokemon', 'it', 'them', 'both', 'these', 'team of 3').\n"
+            f"CRITICAL RULE: If the follow-up message is a new standalone question, an unrelated topic, slang, or nonsense (such as 'potty'), return the follow-up message EXACTLY as-is without adding prior Pokémon or context.\n\n"
             f"Example:\n"
             f"History: User: Which Pokémon blast fire? Assistant: Charizard spits super hot fire...\n"
             f"Follow-up: Build me a team of 3 such pokemon.\n"
@@ -137,6 +232,26 @@ def route_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> Q
             canonical = p.replace("-", " ").title()
             if canonical not in found_pokemon:
                 found_pokemon.append(canonical)
+
+    # If no exact entity found, check tokens for 1-2 letter typos against canonical Pokemon
+    if not found_pokemon:
+        words = re.findall(r'\b[a-z0-9-]+\b', query_lower)
+        for w in words:
+            if len(w) >= 3:
+                m = match_closest_pokemon(w)
+                if m and m not in found_pokemon:
+                    found_pokemon.append(m)
+
+    # 2. Domain check: If no pokemon found and query does not contain Pokemon domain terms, mark out of scope
+    if not is_pokemon_domain_query(effective_query, found_pokemon):
+        logger.info(f"Query '{query}' determined out of scope for Pokemon domain.")
+        return QueryAnalysis(
+            category="out_of_scope",
+            pokemon_entities=[],
+            sub_queries=[],
+            is_comparison=False,
+            content_type_filter=None
+        )
 
     # Detect team building and counter strategy intents
     team_keywords = ["team", "assemble", "build a team", "build me a team", "squad", "roster", "lineup"]

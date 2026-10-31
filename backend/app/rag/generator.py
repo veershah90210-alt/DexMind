@@ -77,14 +77,14 @@ CORE OPERATING DIRECTIVES:
      * Provide comprehensive, engaging explanations grounded in the source records.
    - Professional formatting: Bold Pokémon names (**Charizard**), use clean markdown headings, bulleted phases, and clear tables where helpful.
 
-3. ABSTENTION BOUNDARIES (KNOWING WHEN TO ABSTAIN):
-   - ONLY abstain if the inquiry asks for information completely outside the indexed Pokémon game database:
-     * Anime voice actors or real-world cast members (e.g. "Who voiced Pikachu in the anime?").
-     * Real-world merchandise, plush toy, or trading card (TCG) market prices.
-     * Pokémon from non-indexed generations (Generations 2 through 9).
-     * Non-Pokémon real-world trivia or personal questions.
-   - For these truly out-of-scope topics, respond strictly with:
-     "I couldn't verify this information using the sources currently indexed in DexMind. The current database contains Generation 1 Pokémon game statistics, abilities, type matchups, evolution chains, and Pokédex descriptions, and does not contain the required [specific topic, e.g. anime casting / voice actor / TCG price] information."
+3. ABSTENTION BOUNDARIES & REJECTING INVALID/NONSENSICAL INQUIRIES:
+   - If the user inquiry asks about nonsensical, slang, profane, or completely non-canonical attributes (such as "potty", "toilet", "poop", "car", etc.), even if asked alongside a real Pokémon (e.g. "pikachu potty"):
+     * Do NOT invent fake attributes or ignore the user's inquiry to output generic stats.
+     * State clearly:
+       '"{term}" is outside canonical Pokémon game records. DexMind contains verified battle statistics, typing advantages, movepools, abilities, and evolutions across Generations 1 through 9, and contains no records related to "{term}".'
+   - If the inquiry asks for real-world out-of-scope topics (anime voice actors, TCG card market prices, plush toys, real-world personal questions):
+     * State clearly:
+       "I couldn't verify this information using the sources currently indexed in DexMind. The current database contains canonical Pokémon video game data (Generations 1 through 9) and does not contain the required [specific topic, e.g. anime casting / voice actor / TCG price] records."
    - NEVER abstain on valid battle tactics, team assembly, matchup advice, or competitive questions. Always use the indexed evidence to reason and provide expert recommendations!
 """
 
@@ -152,12 +152,13 @@ def validate_citations(answer: str, retrieved_chunks: List[Dict[str, Any]]) -> D
             invalid_citations.append(k)
 
     # Check for evidence insufficiency / true abstention
-    # Only flag as unanswerable if the answer is a true abstention, not strategic sentences mentioning "does not contain a resistance"
     is_unanswerable = False
     answer_clean = answer.strip().lower()
     if answer_clean.startswith("i couldn't verify this information") or answer_clean.startswith("i cannot verify this information"):
         is_unanswerable = True
-    elif "does not contain the required" in answer_clean and "current database contains generation 1" in answer_clean:
+    elif "does not contain" in answer_clean and ("database contains" in answer_clean or "records" in answer_clean or "indexed in dexmind" in answer_clean):
+        is_unanswerable = True
+    elif "outside canonical pokémon game records" in answer_clean or "outside the canonical pokémon game records" in answer_clean or "outside canonical pokemon game records" in answer_clean:
         is_unanswerable = True
     elif "no relevant evidence was found in the indexed database" in answer_clean:
         is_unanswerable = True
@@ -176,8 +177,8 @@ def generate_rag_response(
     """Coordinates context construction, LLM generation, citation validation, and evidence sufficiency checking."""
     if not retrieved_chunks:
         answer = (
-            "I couldn't verify this information using the sources currently indexed in DexMind. "
-            "No relevant evidence was found in the indexed database."
+            f'"{query.strip()}" is outside canonical Pokémon game records. '
+            f'DexMind covers battle statistics, typing advantages, movepools, abilities, and competitive strategy across Generations 1 through 9.'
         )
         return {
             "answer": answer,

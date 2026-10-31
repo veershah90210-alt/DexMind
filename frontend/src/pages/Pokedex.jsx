@@ -333,7 +333,13 @@ export default function Pokedex({
       ) : pokemonList.length === 0 ? (
         <div className="py-24 text-center bg-[#1e293b] border-2 border-[#334155] p-8 space-y-4">
           <p className="text-slate-200 text-base font-semibold">
-            No Pokémon found matching your query.
+            {searchTerm ? (
+              <>
+                No Pokémon found matching &ldquo;<span className="text-yellow-400 font-mono">{searchTerm}</span>&rdquo; in canonical records. Please verify spelling or search by ID (1–1025).
+              </>
+            ) : (
+              'No Pokémon found matching your filters.'
+            )}
           </p>
           <button
             onClick={() => {
