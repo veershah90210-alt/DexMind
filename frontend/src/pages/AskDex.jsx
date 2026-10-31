@@ -272,25 +272,16 @@ const DEFAULT_WELCOME_MESSAGE = {
 };
 
 export default function AskDex({ onCitationClick, initialQuery }) {
-  // Store and restore conversation when going to a different section and coming back
-  const [messages, setMessages] = useState(() => {
+  // Always clear any stale localStorage so restarting the website starts fresh
+  useEffect(() => {
     try {
-      const saved = localStorage.getItem('dexmind_active_conversation');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((m) => ({
-            ...m,
-            text: cleanOutOfContextText(m.text),
-          }));
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to restore conversation:', err);
+      localStorage.removeItem('dexmind_active_conversation');
+    } catch {
+      // ignore
     }
-    return [DEFAULT_WELCOME_MESSAGE];
-  });
+  }, []);
 
+  const [messages, setMessages] = useState([DEFAULT_WELCOME_MESSAGE]);
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState(null);
@@ -298,15 +289,6 @@ export default function AskDex({ onCitationClick, initialQuery }) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const lastProcessedInitialQuery = useRef('');
-
-  // Persist conversation updates
-  useEffect(() => {
-    try {
-      localStorage.setItem('dexmind_active_conversation', JSON.stringify(messages));
-    } catch (err) {
-      console.warn('Failed to save conversation:', err);
-    }
-  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -558,8 +540,8 @@ export default function AskDex({ onCitationClick, initialQuery }) {
     ];
     setMessages(resetSession);
     try {
-      localStorage.setItem('dexmind_active_conversation', JSON.stringify(resetSession));
-    } catch (err) {}
+      localStorage.removeItem('dexmind_active_conversation');
+    } catch {}
   };
 
   const handleCopyMessage = async (msgId, text) => {
