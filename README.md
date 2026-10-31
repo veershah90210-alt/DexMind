@@ -1,48 +1,334 @@
-# ⚡ DexMind 
+# ⚡ DexMind
 
 <div align="center">
-  <h3>The Ultimate RAG-Powered Pokédex & Battle Intelligence System</h3>
+  <h3>An Intelligent, RAG-Powered Pokémon Discovery & Battle Intelligence System</h3>
   <p>
-    Built with <strong>React 19</strong>, <strong>FastAPI</strong>, <strong>MongoDB Atlas Vector Search</strong>, and <strong>Google Gemini</strong>.
+    Built by <strong>Team 404NotFound</strong> for <strong>Nexus Uncharted Hackathon 2026</strong>
+  </p>
+  <p>
+    <strong>React 19</strong> • <strong>FastAPI</strong> • <strong>MongoDB Atlas Vector Search</strong> • <strong>Gemini API</strong> • <strong>PokéAPI</strong>
   </p>
 </div>
 
 ---
 
-DexMind is an advanced, AI-driven Pokémon research assistant. Moving beyond static databases, it utilizes **Retrieval-Augmented Generation (RAG)** to provide grounded, verifiable answers to natural language questions about Pokémon stats, battle strategies, type matchups, and lore. 
+DexMind is an AI-powered Pokémon research engine and tactical companion built on a hybrid **Retrieval-Augmented Generation (RAG)** architecture. Moving beyond static wikis and generic LLM hallucinations, DexMind synthesizes canonical game records across Generations 1 through 9 to deliver factual, battle-tested insights backed by clickable evidence citations.
 
-## ✨ Key Features
+---
 
-* **🧠 Grounded RAG Q&A**: Answers are constructed **strictly from retrieved PokéAPI documents**. Every tactical claim features verifiable citations (e.g., `[S1]`, `[S2]`).
-* **🔍 Clickable Evidence Inspector**: Click any citation badge to view the exact retrieved text chunk, source URL, game version, and content type.
-* **🛡️ Hallucination Guardrails**: If a question falls outside indexed material (e.g., anime voice actors, TCG prices), DexMind explicitly abstains instead of inventing information.
-* **⚔️ Multi-Entity Independent Retrieval**: When comparing Pokémon (e.g., *Charizard vs. Blastoise*), the query router splits the intent to retrieve independent, balanced evidence for each entity.
-* **📊 Pokédex & Head-to-Head Comparison**: Explore generation data, official sprites, and compare any two Pokémon side-by-side with stat difference bars.
-* **🏆 Competitive Team Advisor**: Generates a balanced Kanto team using deterministic type-coverage calculations paired with RAG synergy explanations.
+## 🌟 Key Features
+
+* **🧠 Strictly Grounded RAG Q&A**: Answers are generated exclusively from verified PokéAPI documentation. Every tactical assertion, stat comparison, and ability detail is mapped to explicit citation markers (e.g., `[S1]`, `[S2]`).
+* **🔍 Interactive Evidence Inspector**: Click any citation badge to open a detailed modal showing the exact retrieved chunk, content category (`overview_stats`, `type_matchup`, `ability`, `evolution`, `pokedex_entry`), version group, and PokéAPI source URL.
+* **🛡️ Hallucination & Abstention Guardrails**: If asked about unindexed out-of-scope topics (e.g., anime voice actors, TCG card values) or non-canonical queries, DexMind explicitly abstains instead of fabricating answers.
+* **⚔️ Multi-Entity Independent Retrieval**: Complex head-to-head queries (e.g., *"Charizard vs. Dragonite"*) dynamically split into dedicated entity sub-queries, preventing context starvation and ensuring unbiased evidence.
+* **📊 Pokédex Explorer & Stat Comparator**: Browse full Pokédex entries with official Sugimori artwork, base stat LED distributions, and direct head-to-head comparisons featuring automated win/loss differentials.
+* **🏆 Deterministic Team Advisor**: Combines algorithmic type-coverage calculation (evaluating multi-type resistances, 2x/4x weaknesses, and offensive super-effective spread) with RAG-generated tactical synergy dossiers.
+
+---
 
 ## 🛠️ Technology Stack
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 19, Vite, Tailwind CSS v4, Framer Motion, Lucide Icons |
-| **Backend** | Python 3.15, FastAPI, PyMongo, Uvicorn, HTTPX |
-| **Database** | MongoDB Atlas (Raw Data, Normalized Documents, RAG Chunks) |
-| **AI / Search** | Atlas Vector Search, Atlas Full-Text Search, Gemini API (`gemini-2.5-flash`), `sentence-transformers` (Local Embeddings) |
+| Domain | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend** | React 19, Vite, Tailwind CSS v4 | High-contrast, zero-border-radius tactical Pokédex UI |
+| **Animation & UI** | Motion, Lucide Icons, Remark GFM | Fluid micro-interactions and markdown citation parsing |
+| **Backend API** | Python 3.15, FastAPI, Uvicorn | Asynchronous REST endpoints, CORS middleware, data routers |
+| **Database** | MongoDB Atlas (PyMongo) | Primary storage for raw records, normalized Pokédex, and chunks |
+| **Vector Search** | MongoDB Atlas Vector Search | 384-dimensional cosine similarity indexing on embedding vectors |
+| **Full-Text Search** | MongoDB Atlas Search | Compound keyword retrieval on Pokémon names and content text |
+| **Embeddings** | `sentence-transformers/all-MiniLM-L6-v2` | Fast, localized 384-dimensional dense vector embeddings |
+| **LLM Provider** | Google Gemini (`gemini-2.5-flash` / `google-genai`) | Low-latency, instruction-tuned tactical generation |
+| **Data Provider** | PokéAPI (v2) via HTTPX | Upstream REST API client with persistent keep-alive and caching |
 
-## 📂 Project Architecture
+---
+
+## 📐 Hybrid RAG Pipeline Architecture
 
 ```text
-dexmind-root/
+[ User Query ]
+      │
+      ▼
+[ Query Router & Entity Extractor ] ──► (Detects Entities, Intent, Typo-Tolerant Names)
+      │
+      ├──────────────────────────────┬──────────────────────────────┐
+      ▼                              ▼                              ▼
+[ Dense Vector Search ]    [ Atlas Keyword Search ]      [ Weakness Cross-Filter ]
+(MiniLM-L6-v2 Cosine 384d)   (Compound Full-Text)       (Candidate Counter Selection)
+      │                              │                              │
+      └──────────────────────────────┴──────────────────────────────┘
+                                     │
+                                     ▼
+                     [ Reciprocal Rank Fusion (RRF) ]
+                       (Score = Σ 1 / (60 + Rank))
+                                     │
+                                     ▼
+                      [ Chunk Deduplication & Tagging ]
+                            ([S1], [S2], [S3]...)
+                                     │
+                                     ▼
+                  [ Gemini Grounded Prompt Generator ]
+                   (Strict System Instruction Filter)
+                                     │
+                                     ▼
+                    [ Citation Verification Layer ]
+                 (Strips Hallucinated Source References)
+                                     │
+                                     ▼
+                     [ Verified Structured Response ]
+
+```
+
+---
+
+## 📁 Repository Structure
+
+```text
+DexMind/
 ├── backend/
 │   ├── app/
-│   │   ├── rag/           # Query routing, RRF reranking, embedding, Gemini generator
-│   │   ├── routes/        # FastAPI endpoints (ask, compare, ingest, pokemon, team)
-│   │   └── services/      # PokéAPI client, ingestion pipeline, team advisor math
-│   └── scripts/           # Database seeding utilities
+│   │   ├── config.py              # Environment variables and model definitions
+│   │   ├── database.py            # MongoDB Atlas connection pool and health checks
+│   │   ├── main.py                # FastAPI initialization, CORS, and route mounting
+│   │   ├── rag/
+│   │   │   ├── all_pokemon_names.json # Canonical Pokémon name registry for matching
+│   │   │   ├── embeddings.py      # Local SentenceTransformer embedding generator
+│   │   │   ├── generator.py       # Gemini API client, system prompt, citation validator
+│   │   │   ├── query_router.py    # Typo tolerance, intent classification, sub-queries
+│   │   │   ├── reranking.py       # Reciprocal Rank Fusion (RRF) algorithm
+│   │   │   └── retrieval.py       # Hybrid Atlas Vector + Full-Text Search orchestrator
+│   │   ├── routes/
+│   │   │   ├── ask.py             # POST /api/ask (Grounded Q&A endpoint)
+│   │   │   ├── compare.py         # POST /api/compare (Head-to-head comparison)
+│   │   │   ├── ingest.py          # POST /api/ingest/* (Data sync triggers)
+│   │   │   ├── pokemon.py         # GET /api/pokemon (Directory, details, filters)
+│   │   │   └── team.py            # GET /api/team/advisor (Synergy calculation)
+│   │   └── services/
+│   │       ├── ingestion.py       # Chunk generation, damage relation calculator
+│   │       ├── pokeapi.py         # Async HTTPX client for PokéAPI v2
+│   │       └── team_advisor.py    # Deterministic team coverage analyzer
+│   ├── scripts/
+│   │   └── seed_pokedex.py        # CLI batch ingestion and embedding utility
+│   ├── requirements.txt           # Python dependencies
+│   └── .env.example               # Backend environment variables template
 ├── frontend/
 │   ├── src/
-│   │   ├── components/    # Reusable UI (Navbar, PokemonCard, CitationPanel)
-│   │   ├── pages/         # Core views (Home, AskDex, Pokedex, ComparePage)
-│   │   └── services/      # API communication layer
-│   └── vite.config.js     # Dev server & /api proxy configuration
-└── package.json           # Root workspace scripts
+│   │   ├── components/
+│   │   │   ├── CitationPanel.jsx  # Interactive source chunk inspector
+│   │   │   ├── ComparisonCard.jsx # Side-by-side battle statistics diff
+│   │   │   ├── Navbar.jsx         # Navigation bar with live Atlas connection pill
+│   │   │   └── PokemonCard.jsx    # Pokédex entity cards with type badges
+│   │   ├── pages/
+│   │   │   ├── AskDex.jsx         # Conversational RAG workspace
+│   │   │   ├── ComparePage.jsx    # Dual-Pokémon battle analytics
+│   │   │   ├── Home.jsx           # Dashboard overview and ingestion triggers
+│   │   │   └── Pokedex.jsx        # Searchable, filterable Pokémon directory
+│   │   ├── services/
+│   │   │   └── api.js             # Frontend API request layer
+│   │   ├── App.jsx                # Layout frame and active tab state
+│   │   └── index.css              # Custom Tailwind CSS styling and reset rules
+│   ├── package.json               # Frontend dependencies and Vite build scripts
+│   └── vite.config.js             # Vite development server and API proxy setup
+├── package.json                   # Root monorepo proxy scripts
+└── README.md
+
+```
+
+---
+
+## ⚙️ Environment Configuration
+
+### Backend (`backend/.env`)
+
+Create a `.env` file inside the `backend/` directory:
+
+```env
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/?retryWrites=true&w=majority
+MONGODB_DATABASE=dexmind
+GEMINI_API_KEY=your_gemini_api_key_here
+LLM_MODEL=gemini-2.5-flash
+EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+VECTOR_INDEX_NAME=dex_vector_index
+TEXT_INDEX_NAME=dex_text_index
+PORT=8000
+
+```
+
+### Frontend (`frontend/.env`)
+
+Create a `.env` file inside the `frontend/` directory (optional in development due to Vite proxy):
+
+```env
+VITE_API_URL=http://127.0.0.1:8000
+
+```
+
+---
+
+## 🔍 MongoDB Atlas Search Index Setup
+
+DexMind requires two search indexes created on the `dexmind.dex_chunks` collection.
+
+### 1. Vector Search Index (`dex_vector_index`)
+
+1. Open your cluster in **MongoDB Atlas** → **Atlas Search** → **Create Search Index**.
+
+2. Choose **Atlas Vector Search** → **JSON Editor**.
+
+3. Target Database: `dexmind`, Collection: `dex_chunks`.
+
+4. Set Index Name: `dex_vector_index`.
+
+5. Paste the configuration:
+
+```json
+{
+  "fields": [
+    {
+      "type": "vector",
+      "path": "embedding",
+      "numDimensions": 384,
+      "similarity": "cosine"
+    },
+    {
+      "type": "filter",
+      "path": "pokemon_id"
+    },
+    {
+      "type": "filter",
+      "path": "pokemon_name"
+    },
+    {
+      "type": "filter",
+      "path": "generation"
+    },
+    {
+      "type": "filter",
+      "path": "content_type"
+    },
+    {
+      "type": "filter",
+      "path": "language"
+    },
+    {
+      "type": "filter",
+      "path": "version_group"
+    }
+  ]
+}
+
+```
+
+### 2. Full-Text Search Index (`dex_text_index`)
+
+1. In **Atlas Search** → **Create Search Index**.
+
+2. Choose **Atlas Search** → **JSON Editor**.
+
+3. Target Database: `dexmind`, Collection: `dex_chunks`.
+
+4. Set Index Name: `dex_text_index`.
+
+5. Paste the configuration:
+
+```json
+{
+  "mappings": {
+    "dynamic": false,
+    "fields": {
+      "content": {
+        "type": "string"
+      },
+      "pokemon_name": {
+        "type": "string"
+      },
+      "content_type": {
+        "type": "string"
+      },
+      "source_id": {
+        "type": "string"
+      }
+    }
+  }
+}
+
+```
+
+---
+
+## 🚀 Running DexMind Locally
+
+### 1. Start the Backend Service
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+pip install -r requirements.txt
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+```
+
+* Backend Health Check: `http://127.0.0.1:8000/api/health`
+
+* Swagger Documentation: `http://127.0.0.1:8000/docs`
+
+### 2. Start the Frontend Client
+
+In a separate terminal:
+
+```bash
+# From repository root
+npm run install:frontend
+npm run dev
+
+```
+
+* Web UI: `http://localhost:5173`
+
+---
+
+## 📥 Ingestion & Verification Workflow
+
+1. Navigate to the **DexMind Dashboard** (`http://localhost:5173`) and ensure the MongoDB Atlas indicator reflects **Connected**.
+
+2. Ingest the Generation 1 baseline:
+* **Via Web UI**: Click **"Import Kanto Pokédex (151)"** on the Home tab.
+
+* **Via CLI**: Run `python backend/scripts/seed_pokedex.py --start 1 --end 151`.
+
+3. The ingestion worker will fetch entries from PokéAPI, calculate comprehensive type matchups, generate local dense embeddings (`384d`), and upsert raw documents, entities, and text chunks into Atlas.
+
+4. Test the pipeline:
+* Open **Ask the Dex** and submit: *"Compare Charizard and Dragonite in terms of typing, stats, and tactical matchups."*
+
+* Inspect the returned citations (`[S1]`, `[S2]`) to verify source alignment.
+
+* Try an invalid out-of-scope query: *"How much does a 1st edition Charizard card cost on eBay?"* and verify explicit system abstention.
+
+---
+
+## 📡 REST API Reference
+
+| Endpoint | Method | Description |
+| --- | --- | --- |
+| `/api/health` | `GET` | Validates MongoDB connection and index configurations.
+| `/api/ask` | `POST` | Primary RAG endpoint accepting questions, filters, and chat history.
+| `/api/compare` | `POST` | Dual Pokémon stats comparison and comparative RAG analysis.
+| `/api/pokemon` | `GET` | Paginated Pokémon directory with name and elemental type filters.
+| `/api/pokemon/{id}` | `GET` | Retrieves complete normalized Pokémon record by ID.
+| `/api/team/advisor` | `GET` | Returns mathematically balanced core team with synergy explanations.
+| `/api/ingest/kanto` | `POST` | Background worker importing Generation 1 Pokémon (IDs 1–151).
+| `/api/ingest/all` | `POST` | Full worker import covering Generations 1 through 9 (IDs 1–1025).
+| `/api/ingest/status` | `GET` | Ingestion status, progress percentage, and indexing statistics.
+---
+
+## 👥 Team 404NotFound
+
+Developed for **Nexus Uncharted Hackathon 2026**.
+
+* **Repository**: [https://github.com/veershah90210-alt/DexMind/](https://github.com/veershah90210-alt/DexMind/)
+
+*Pokémon and Pokémon character names are trademarks of Nintendo, Creatures Inc., and GAME FREAK inc.*
+
+```
