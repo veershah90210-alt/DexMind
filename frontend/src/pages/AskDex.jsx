@@ -65,9 +65,14 @@ function getPokemonIdByName(name, sources = []) {
 }
 
 function extractMessagePokemon(m) {
+  // Never show Pokémon visual banners for greetings, general non-specimen queries, gibberish, or errors
+  if (m.retrieval_meta?.category === 'conversational') return [];
+  if (m.is_gibberish || m.is_error || m.is_unanswerable) return [];
+
   const result = [];
   const seen = new Set();
 
+  // ONLY extract pokemon that were explicitly detected as entities for this query
   const entities = m.detected_entities || m.retrieval_meta?.entities_detected || [];
   for (const name of entities) {
     const lower = name.toLowerCase().trim();
@@ -80,25 +85,6 @@ function extractMessagePokemon(m) {
           name: name.charAt(0).toUpperCase() + name.slice(1),
           sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
         });
-      }
-    }
-  }
-
-  if (result.length === 0 && m.sources && Array.isArray(m.sources)) {
-    for (const s of m.sources) {
-      if (s.pokemon_name) {
-        const lower = s.pokemon_name.toLowerCase().trim();
-        if (!seen.has(lower)) {
-          seen.add(lower);
-          const id = getPokemonIdByName(s.pokemon_name, m.sources);
-          if (id) {
-            result.push({
-              id,
-              name: s.pokemon_name.charAt(0).toUpperCase() + s.pokemon_name.slice(1),
-              sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
-            });
-          }
-        }
       }
     }
   }
@@ -147,7 +133,8 @@ const POKEMON_KEYWORDS_SET = new Set([
   'evolution', 'evolve', 'evolves', 'pre-evolution', 'pokedex', 'dex', 'lore', 'species',
   'shiny', 'legendary', 'mythical', 'paradox', 'gym', 'trainer', 'battle', 'catch',
   'generation', 'gen', 'kanto', 'johto', 'hoenn', 'sinnoh', 'unova', 'kalos', 'alola', 'galar', 'paldea',
-  'hello', 'hi', 'hey', 'greetings', 'help', 'who are you', 'what can you do'
+  'hello', 'hi', 'hey', 'heya', 'howdy', 'hola', 'greetings', 'help', 'who are you', 'what can you do',
+  'good morning', 'good afternoon', 'good evening', 'how are you', 'yo', 'sup', 'thanks', 'thank you', 'thx'
 ]);
 
 function isInvalidOrOutOfScopeQuery(str) {
@@ -365,9 +352,21 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         }
       }
 
+      // Check if conversational greeting
+      const queryLower = query.toLowerCase().trim();
+      const isGreeting = Boolean(
+        data.retrieval_meta?.category === 'conversational' ||
+        /^(hi|hello|hey|heya|howdy|hola|yo|sup|greetings)\b/i.test(queryLower) ||
+        /^(good\s+(morning|afternoon|evening|day|night))\b/i.test(queryLower) ||
+        /^(who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do|help|commands|how\s+does\s+this\s+work)\b/i.test(queryLower) ||
+        /^(thanks|thank\s+you|thx|bye|goodbye)\b/i.test(queryLower)
+      );
+
       // Enforce 1 or 2 letter spelling mistakes tolerance against canonical catalog
       let detectedEntities = [];
-      if (isVsQuery) {
+      if (isGreeting) {
+        finalSources = [];
+      } else if (isVsQuery) {
         if (rawCandidates.length >= 2) {
           const validated = [];
           let spellingFailure = null;

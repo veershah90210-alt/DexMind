@@ -177,7 +177,7 @@ def retrieve_evidence(
     """
     analysis: QueryAnalysis = route_query(query, history=history)
 
-    if analysis.category == "out_of_scope":
+    if analysis.category in ["out_of_scope", "conversational"]:
         return {
             "analysis": analysis.to_dict(),
             "total_candidates": 0,

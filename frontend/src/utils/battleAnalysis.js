@@ -87,10 +87,24 @@ export function levenshteinDistance(a, b) {
  * Words of length > 4: max 2 letter mistakes.
  * Returns { id, name, distance } if within threshold, otherwise null.
  */
+const EXCLUDED_COMMON_WORDS = new Set([
+  'hello', 'hi', 'hey', 'heya', 'howdy', 'hola', 'greetings', 'help', 'who', 'what', 'where', 'when', 'why',
+  'how', 'good', 'morning', 'afternoon', 'evening', 'night', 'thanks', 'thank', 'you', 'commands', 'clear',
+  'reset', 'yo', 'sup', 'bye', 'goodbye', 'cool', 'nice', 'okay', 'sure', 'well', 'yes', 'yeah', 'nah', 'nope',
+  'the', 'and', 'for', 'with', 'about', 'give', 'tell', 'show', 'can', 'could', 'would', 'will', 'are', 'is',
+  'was', 'were', 'this', 'that', 'some', 'all', 'any', 'best', 'most', 'more', 'like', 'other', 'another',
+  'does', 'have', 'has', 'had', 'name', 'names', 'need', 'play', 'make', 'take', 'find', 'look', 'from',
+  'into', 'over', 'under', 'than', 'then', 'just', 'very', 'much', 'many', 'such', 'both', 'each', 'every',
+  'stat', 'stats', 'rule', 'rules', 'game', 'play', 'type', 'types', 'weak', 'move', 'moves', 'item', 'items',
+  'team', 'teams', 'lead', 'tank', 'wall', 'buff', 'nerf', 'tier', 'meta', 'turn', 'turns', 'crit', 'hits',
+  'damage', 'speed', 'power', 'level', 'form', 'forms', 'mode', 'modes', 'rank', 'ball', 'zone'
+]);
+
 export function findClosestPokemon(inputWord, catalog = POKEMON_CATALOG) {
   if (!inputWord || typeof inputWord !== 'string') return null;
   const clean = inputWord.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
   if (clean.length < 2) return null;
+  if (EXCLUDED_COMMON_WORDS.has(clean)) return null;
 
   const maxAllowed = clean.length <= 4 ? 1 : 2;
 
