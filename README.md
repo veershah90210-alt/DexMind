@@ -1,48 +1,97 @@
-# ⚡ DexMind 
+# ⚡ DexMind — An Intelligent Pokémon Discovery & Battle Intelligence Platform
 
 <div align="center">
-  <h3>The Ultimate RAG-Powered Pokédex & Battle Intelligence System</h3>
-  <p>
-    Built with <strong>React 19</strong>, <strong>FastAPI</strong>, <strong>MongoDB Atlas Vector Search</strong>, and <strong>Google Gemini</strong>.
+
+  [![Live Demo](https://img.shields.io/badge/Demo-Live%20Deployment-00C7B7?style=for-the-badge&logo=vercel&logoColor=white)](https://dex-mind-pied.vercel.app/)
+  [![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/veershah90210-alt/DexMind/)
+  [![Hackathon](https://img.shields.io/badge/Nexus%20Uncharted-Hackathon%202026-EE1515?style=for-the-badge&logo=pokemon&logoColor=white)](#-built-by-team-404notfound)
+  [![Database](https://img.shields.io/badge/MongoDB-Atlas%20Vector%20Search-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/products/platform/atlas-vector-search)
+  [![AI](https://img.shields.io/badge/Google-Gemini%20API-4285F4?style=for-the-badge&logo=googlegemini&logoColor=white)](https://ai.google.dev/)
+
+  <p align="center">
+    <strong>Built by Team 404NotFound for Nexus Uncharted Hackathon 2026</strong>
+  </p>
+  <p align="center">
+    <em>"Don't just search your Pokédex. Talk to it."</em>
   </p>
 </div>
 
 ---
 
-DexMind is an advanced, AI-driven Pokémon research assistant. Moving beyond static databases, it utilizes **Retrieval-Augmented Generation (RAG)** to provide grounded, verifiable answers to natural language questions about Pokémon stats, battle strategies, type matchups, and lore. 
+## 🌐 Live Deployment & Preview
 
-## ✨ Key Features
+* **Production Web App**: [https://dex-mind-pied.vercel.app/](https://dex-mind-pied.vercel.app/)
+* **Project Repository**: [https://github.com/veershah90210-alt/DexMind/](https://github.com/veershah90210-alt/DexMind/)
 
-* **🧠 Grounded RAG Q&A**: Answers are constructed **strictly from retrieved PokéAPI documents**. Every tactical claim features verifiable citations (e.g., `[S1]`, `[S2]`).
-* **🔍 Clickable Evidence Inspector**: Click any citation badge to view the exact retrieved text chunk, source URL, game version, and content type.
-* **🛡️ Hallucination Guardrails**: If a question falls outside indexed material (e.g., anime voice actors, TCG prices), DexMind explicitly abstains instead of inventing information.
-* **⚔️ Multi-Entity Independent Retrieval**: When comparing Pokémon (e.g., *Charizard vs. Blastoise*), the query router splits the intent to retrieve independent, balanced evidence for each entity.
-* **📊 Pokédex & Head-to-Head Comparison**: Explore generation data, official sprites, and compare any two Pokémon side-by-side with stat difference bars.
-* **🏆 Competitive Team Advisor**: Generates a balanced Kanto team using deterministic type-coverage calculations paired with RAG synergy explanations.
+---
 
-## 🛠️ Technology Stack
+## 📖 Executive Summary
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 19, Vite, Tailwind CSS v4, Framer Motion, Lucide Icons |
-| **Backend** | Python 3.15, FastAPI, PyMongo, Uvicorn, HTTPX |
-| **Database** | MongoDB Atlas (Raw Data, Normalized Documents, RAG Chunks) |
-| **AI / Search** | Atlas Vector Search, Atlas Full-Text Search, Gemini API (`gemini-2.5-flash`), `sentence-transformers` (Local Embeddings) |
+Traditional Pokédex tools are static reference manuals: looking up base stats, damage multipliers, abilities, and competitive interactions across multiple Pokémon requires jumping through disconnected wiki tabs. Meanwhile, general-purpose LLMs regularly hallucinate Pokémon typings, movepool legality, base stat totals, and competitive mechanics when queried in freeform text.
 
-## 📂 Project Architecture
+**DexMind** bridges this gap. It is a full-stack, production-engineered Pokémon research engine powered by a **Hybrid Retrieval-Augmented Generation (RAG)** pipeline. By synchronizing **MongoDB Atlas Vector Search**, **Atlas Keyword Full-Text Search**, local high-efficiency embeddings, and Google's **Gemini API**, DexMind delivers conversational responses strictly grounded in canonical game records. Every statement is reinforced with verifiable, clickable in-text source citations (`[S1]`, `[S2]`) directly mapped to indexed Pokémon document chunks.
 
-```text
-dexmind-root/
-├── backend/
-│   ├── app/
-│   │   ├── rag/           # Query routing, RRF reranking, embedding, Gemini generator
-│   │   ├── routes/        # FastAPI endpoints (ask, compare, ingest, pokemon, team)
-│   │   └── services/      # PokéAPI client, ingestion pipeline, team advisor math
-│   └── scripts/           # Database seeding utilities
-├── frontend/
-│   ├── src/
-│   │   ├── components/    # Reusable UI (Navbar, PokemonCard, CitationPanel)
-│   │   ├── pages/         # Core views (Home, AskDex, Pokedex, ComparePage)
-│   │   └── services/      # API communication layer
-│   └── vite.config.js     # Dev server & /api proxy configuration
-└── package.json           # Root workspace scripts
+---
+
+## 🌟 Core System Features
+
+### 1. 🧠 Grounded Hybrid RAG Assistant (`Ask the Dex`)
+* **Strict Fact-Checking**: Responses are generated exclusively from verified PokéAPI documentation and canonical game texts retrieved at runtime.
+* **Clickable Evidence Inspector**: Clicking any citation badge (`[S1]`, `[S2]`) launches a modal displaying the exact raw text chunk, source URL, game version group, and content classification.
+* **Zero-Hallucination Abstention**: If a user asks about non-canonical mechanics, unindexed real-world queries (e.g., TCG secondary market pricing, anime voice cast), or invalid attributes, DexMind's generation boundary refuses to extrapolate and explicitly declares that required records are not indexed.
+
+### 2. ⚔️ Multi-Entity Independent Retrieval & Head-to-Head Compare
+* **Entity-Balanced Sub-Queries**: When analyzing multi-Pokémon matchups (e.g., *Charizard vs. Blastoise*), the query router automatically isolates each entity and issues dedicated vector and keyword searches to guarantee balanced context without document starvation.
+* **Structured Comparison Metrics**: View side-by-side base stat comparisons, automated differential delta calculations, speed tier determinations, and tactical battle summaries.
+
+### 3. 🛡️ Deterministic Team Synergy Advisor
+* **Mathematical Coverage Engine**: Calculates offensive super-effective type coverage and identifies shared defensive vulnerabilities (types that threaten 3 or more team members).
+* **Tactical Role Synthesis**: Recommends balanced tournament team cores (physical sweepers, special walls, defensive pivots, hazard leads) backed by narrative explanations from the RAG engine.
+
+### 4. 🗂️ Unified National Pokédex Explorer
+* **High-Performance Grid**: Instant filtering across elemental types, generation selectors (Gen 1 through Gen 9), and instant text search by name or National Dex number.
+* **Official Visual Assets**: Integrated official Ken Sugimori transparent artwork, Dream World SVGs, high-resolution sprites, base stat distributions, abilities (including hidden abilities), and branching evolution paths.
+
+---
+
+## 🏗️ Technical Architecture & Pipeline
+
+[ User Query ]
+                                    │
+                                    ▼
+                         [ Intent Query Router ]
+                   (Typo Tolerance & Multi-Entity Split)
+                                    │
+                ┌───────────────────┴───────────────────┐
+                ▼                                       ▼
+   [ Sentence-Transformers ]               [ Atlas Keyword Search ]
+ (384-d all-MiniLM-L6-v2)                   (Compound Must / Filter)
+                │                                       │
+                ▼                                       ▼
+  [ MongoDB Atlas Vector Search ]            [ MongoDB Atlas Search ]
+      (Cosine Similarity Index)                 (Full-Text Index)
+                │                                       │
+                └───────────────────┬───────────────────┘
+                                    │
+                                    ▼
+                    [ Reciprocal Rank Fusion (RRF) ]
+                   Score = Σ ( 1 / (60 + Rank_i) )
+                                    │
+                                    ▼
+                     [ Validated Context Assembler ]
+                       (Tagged Sources [S1], [S2])
+                                    │
+                                    ▼
+                       [ Google Gemini LLM Engine ]
+                    (Strict Grounding & Citation Check)
+                                    │
+                ┌───────────────────┴───────────────────┐
+                ▼                                       ▼
+    [ Sufficient Evidence ]                 [ Out of Scope / Missing ]
+   Grounded Response + Sources              Explicit Abstention Notice
+
+   ### The 4-Step Under-the-Hood Workflow
+1. **Query Processing & Vectorization**: Natural language queries are tokenized and translated into dense 384-dimensional vector embeddings using `sentence-transformers/all-MiniLM-L6-v2`.
+2. **Hybrid Search Execution**: The backend concurrently queries MongoDB Atlas via `$vectorSearch` (cosine similarity on the `embedding` field) and `$search` (BM25 keyword search across `content` and `pokemon_name`).
+3. **Reciprocal Rank Fusion (RRF)**: Candidate documents from both ranking engines are deduplicated and merged using RRF ($k=60$) to prioritize documents with high semantic relevance and exact keyword density.
+4. **Context Injection & Citation Enforcement**: Assembled candidate chunks are injected into Gemini's system instructions. The model is constrained to cite claims using `[S#]` tags. The backend validates every
