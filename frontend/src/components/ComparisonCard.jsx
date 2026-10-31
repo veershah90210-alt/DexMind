@@ -15,6 +15,7 @@ import {
   Swords,
 } from 'lucide-react';
 import { getTypeStyle } from '../utils/pokemonTypes';
+import PokeBall from './PokeBall';
 
 const STAT_CONFIG = {
   hp: { name: 'HP', icon: Heart },
@@ -90,10 +91,16 @@ export default function ComparisonCard({ data, onCitationClick }) {
             className="absolute -top-16 -left-16 w-36 h-36 rounded-full blur-2xl pointer-events-none opacity-40"
             style={{ backgroundColor: p1TypeStyle.glow }}
           />
+          <div className="absolute -bottom-6 -right-6 pointer-events-none opacity-5">
+            <PokeBall variant="watermark" size={110} />
+          </div>
 
           <div className="w-28 h-28 rounded-2xl bg-[#060b19] p-2 border border-blue-500/20 mb-3 flex items-center justify-center relative shadow-inner">
             <img
-              src={p1.sprite_url}
+              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p1.id}.png`}
+              onError={(e) => {
+                e.currentTarget.src = p1.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p1.id}.png`;
+              }}
               alt={p1.name}
               className="w-24 h-24 object-contain drop-shadow-md select-none"
             />
@@ -104,9 +111,12 @@ export default function ComparisonCard({ data, onCitationClick }) {
             )}
           </div>
 
-          <span className="text-xs font-mono font-bold text-blue-300">
-            #{String(p1.id).padStart(3, '0')}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <PokeBall variant="standard" size={12} />
+            <span className="text-xs font-mono font-bold text-yellow-400">
+              #{String(p1.id).padStart(4, '0')}
+            </span>
+          </div>
           <h3 className="text-2xl font-black text-white capitalize tracking-tight mt-0.5">
             {p1.name}
           </h3>
@@ -145,10 +155,16 @@ export default function ComparisonCard({ data, onCitationClick }) {
             className="absolute -top-16 -right-16 w-36 h-36 rounded-full blur-2xl pointer-events-none opacity-40"
             style={{ backgroundColor: p2TypeStyle.glow }}
           />
+          <div className="absolute -bottom-6 -left-6 pointer-events-none opacity-5">
+            <PokeBall variant="watermark" size={110} />
+          </div>
 
           <div className="w-28 h-28 rounded-2xl bg-[#060b19] p-2 border border-blue-500/20 mb-3 flex items-center justify-center relative shadow-inner">
             <img
-              src={p2.sprite_url}
+              src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p2.id}.png`}
+              onError={(e) => {
+                e.currentTarget.src = p2.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p2.id}.png`;
+              }}
               alt={p2.name}
               className="w-24 h-24 object-contain drop-shadow-md select-none"
             />
@@ -159,9 +175,12 @@ export default function ComparisonCard({ data, onCitationClick }) {
             )}
           </div>
 
-          <span className="text-xs font-mono font-bold text-blue-300">
-            #{String(p2.id).padStart(3, '0')}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <PokeBall variant="standard" size={12} />
+            <span className="text-xs font-mono font-bold text-yellow-400">
+              #{String(p2.id).padStart(4, '0')}
+            </span>
+          </div>
           <h3 className="text-2xl font-black text-white capitalize tracking-tight mt-0.5">
             {p2.name}
           </h3>

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { fetchPokemonList, fetchPokemonDetail } from '../services/api';
 import PokemonCard from '../components/PokemonCard';
+import PokeBall from '../components/PokeBall';
 import { getTypeStyle } from '../utils/pokemonTypes';
 
 const GENERATIONS = [
@@ -468,9 +469,12 @@ export default function Pokedex({
               {/* Header */}
               <div className="bg-[#0f1d38] px-6 py-4 border-b border-blue-500/20 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-yellow-400 text-xs font-black px-2 py-0.5 rounded bg-yellow-400/10 border border-yellow-400/20">
-                    #{String(selectedPokemon.id).padStart(3, '0')}
-                  </span>
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-yellow-400/10 border border-yellow-400/20">
+                    <PokeBall variant="standard" size={15} />
+                    <span className="font-mono text-yellow-400 text-xs font-black">
+                      #{String(selectedPokemon.id).padStart(4, '0')}
+                    </span>
+                  </div>
                   <h2 className="text-xl font-black text-white capitalize tracking-tight">
                     {selectedPokemon.name}
                   </h2>
@@ -495,11 +499,17 @@ export default function Pokedex({
                     className="absolute -top-12 -left-12 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-40"
                     style={{ backgroundColor: modalTypeStyle.glow }}
                   />
+                  <div className="absolute -right-8 -bottom-8 pointer-events-none opacity-10">
+                    <PokeBall variant="watermark" size={150} />
+                  </div>
 
                   <img
-                    src={selectedPokemon.sprite_url}
+                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${selectedPokemon.id}.png`}
+                    onError={(e) => {
+                      e.currentTarget.src = selectedPokemon.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.id}.png`;
+                    }}
                     alt={selectedPokemon.name}
-                    className="w-32 h-32 object-contain drop-shadow-lg relative z-10 select-none"
+                    className="w-32 h-32 object-contain drop-shadow-xl relative z-10 select-none"
                   />
                   <div className="flex-1 space-y-2.5 text-center sm:text-left relative z-10">
                     <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">

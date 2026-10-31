@@ -14,6 +14,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { askQuestion } from '../services/api';
+import PokeBall from '../components/PokeBall';
 
 const SUGGESTED_QUESTIONS = [
   'Who counters Charizard in battle?',
@@ -249,10 +250,8 @@ export default function AskDex({ onCitationClick, initialQuery }) {
             >
               {/* Bot Avatar */}
               {!isUser && (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 via-amber-500 to-blue-600 p-0.5 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20">
-                  <div className="w-full h-full rounded-full bg-[#060b19] flex items-center justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-xs animate-pulse-subtle" />
-                  </div>
+                <div className="w-8 h-8 rounded-full bg-[#0b142b] border border-yellow-400/50 p-1 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20 flex items-center justify-center">
+                  <PokeBall variant="standard" size={18} />
                 </div>
               )}
 
@@ -381,10 +380,8 @@ export default function AskDex({ onCitationClick, initialQuery }) {
             animate={{ opacity: 1, y: 0 }}
             className="flex gap-3.5 items-start"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-blue-600 p-0.5 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20">
-              <div className="w-full h-full rounded-full bg-[#060b19] flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping" />
-              </div>
+            <div className="w-8 h-8 rounded-full bg-[#0b142b] border border-yellow-400/50 p-1 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20 flex items-center justify-center animate-spin">
+              <PokeBall variant="ultra" size={18} />
             </div>
 
             <div className="bg-[#0b142b] border border-blue-500/20 rounded-2xl rounded-tl-xs p-4 text-xs font-mono text-yellow-300 flex items-center gap-3 shadow-md">
