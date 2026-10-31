@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowUpDown, AlertCircle, RefreshCw, Sparkles, Swords, Zap } from 'lucide-react';
 import { comparePokemon, fetchPokemonList } from '../services/api';
 import ComparisonCard from '../components/ComparisonCard';
-import { cleanErrorMessage } from '../utils/battleAnalysis';
+import { cleanErrorMessage, findClosestPokemon } from '../utils/battleAnalysis';
 
 const COMPARISON_PRESETS = [
   { p1: 'Charizard', p2: 'Blastoise', label: 'Gen 1 Kanto Icons' },
@@ -43,11 +43,30 @@ export default function ComparePage({ compareSelection, onCitationClick }) {
   }, [compareSelection]);
 
   const executeComparison = async (pokemonA, pokemonB) => {
-    const a = (pokemonA || p1Name).trim();
-    const b = (pokemonB || p2Name).trim();
-    if (!a || !b) return;
+    const rawA = (pokemonA || p1Name).trim();
+    const rawB = (pokemonB || p2Name).trim();
+    if (!rawA || !rawB) return;
 
     setError('');
+
+    // Allow 1 or 2 letter spelling mistakes against canonical catalog
+    const matchA = findClosestPokemon(rawA);
+    if (!matchA) {
+      setError(`"${rawA}" is outside the canonical Pokémon game records.`);
+      return;
+    }
+
+    const matchB = findClosestPokemon(rawB);
+    if (!matchB) {
+      setError(`"${rawB}" is outside the canonical Pokémon game records.`);
+      return;
+    }
+
+    const a = matchA.name;
+    const b = matchB.name;
+    setP1Name(a);
+    setP2Name(b);
+
     setLoading(true);
     try {
       const data = await comparePokemon(a, b);

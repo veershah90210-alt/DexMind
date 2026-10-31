@@ -21,7 +21,10 @@ import {
   cleanErrorMessage,
   generateComparisonAnalysis,
   generatePokemonDossier,
+  findClosestPokemon,
+  stripCitationsAndContext,
 } from '../utils/battleAnalysis';
+import POKEMON_CATALOG from '../utils/pokemonNames.json';
 
 const SUGGESTED_QUESTIONS = [
   'Who counters Charizard in battle?',
@@ -32,56 +35,9 @@ const SUGGESTED_QUESTIONS = [
   'What are the strongest Dragon-type Pokémon in Paldea?',
 ];
 
-const KANTO_NAMES = [
-  'bulbasaur', 'ivysaur', 'venusaur', 'charmander', 'charmeleon', 'charizard',
-  'squirtle', 'wartortle', 'blastoise', 'caterpie', 'metapod', 'butterfree',
-  'weedle', 'kakuna', 'beedrill', 'pidgey', 'pidgeotto', 'pidgeot',
-  'rattata', 'raticate', 'spearow', 'fearow', 'ekans', 'arbok',
-  'pikachu', 'raichu', 'sandshrew', 'sandslash', 'nidoran-f', 'nidorina',
-  'nidoqueen', 'nidoran-m', 'nidorino', 'nidoking', 'clefairy', 'clefable',
-  'vulpix', 'ninetales', 'jigglypuff', 'wigglytuff', 'zubat', 'golbat',
-  'oddish', 'gloom', 'vileplume', 'paras', 'parasect', 'venonat',
-  'venomoth', 'diglett', 'dugtrio', 'meowth', 'persian', 'psyduck',
-  'golduck', 'mankey', 'primeape', 'growlithe', 'arcanine', 'poliwag',
-  'poliwhirl', 'poliwrath', 'abra', 'kadabra', 'alakazam', 'machop',
-  'machoke', 'machamp', 'bellsprout', 'weepinbell', 'victreebel', 'tentacool',
-  'tentacruel', 'geodude', 'graveler', 'golem', 'ponyta', 'rapidash',
-  'slowpoke', 'slowbro', 'magnemite', 'magneton', 'farfetchd', 'doduo',
-  'dodrio', 'seel', 'dewgong', 'grimer', 'muk', 'shellder',
-  'cloyster', 'gastly', 'haunter', 'gengar', 'onix', 'drowzee',
-  'hypno', 'krabby', 'kingler', 'voltorb', 'electrode', 'exeggcute',
-  'exeggutor', 'cubone', 'marowak', 'hitmonlee', 'hitmonchan', 'lickitung',
-  'koffing', 'weezing', 'rhyhorn', 'rhydon', 'chansey', 'tangela',
-  'kangaskhan', 'horsea', 'seadra', 'goldeen', 'seaking', 'staryu',
-  'starmie', 'mr-mime', 'scyther', 'jynx', 'electabuzz', 'magmar',
-  'pinsir', 'tauros', 'magikarp', 'gyarados', 'lapras', 'ditto',
-  'eevee', 'vaporeon', 'jolteon', 'flareon', 'porygon', 'omanyte',
-  'omastar', 'kabuto', 'kabutops', 'aerodactyl', 'snorlax', 'articuno',
-  'zapdos', 'moltres', 'dratini', 'dragonair', 'dragonite', 'mewtwo', 'mew'
-];
-
-const POPULAR_IDS = {
-  lucario: 448,
-  greninja: 658,
-  garchomp: 445,
-  rayquaza: 384,
-  tyranitar: 248,
-  kyogre: 382,
-  groudon: 383,
-  koraidon: 1007,
-  miraidon: 1008,
-  tinkaton: 959,
-  dragapult: 887,
-  mimikyu: 778,
-  gardevoir: 282,
-  sceptile: 254,
-  blaziken: 257,
-  swampert: 260,
-  infernape: 392,
-  decidueye: 724,
-  cinderace: 815,
-  meowscarada: 908,
-};
+const POKEMON_BY_NAME = new Map(
+  POKEMON_CATALOG.map((p) => [p.name.toLowerCase().replace(/[^a-z0-9]/g, ''), p.id])
+);
 
 function getPokemonIdByName(name, sources = []) {
   if (!name) return null;
@@ -89,17 +45,21 @@ function getPokemonIdByName(name, sources = []) {
 
   if (sources && Array.isArray(sources)) {
     for (const s of sources) {
-      if (s.pokemon_name && s.pokemon_name.toLowerCase().includes(cleanName.slice(0, 4))) {
+      if (s.pokemon_name && s.pokemon_name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanName.slice(0, 4))) {
         const m = s.source_url?.match(/\/pokemon\/(\d+)/);
         if (m) return parseInt(m[1], 10);
       }
     }
   }
 
-  const idx = KANTO_NAMES.findIndex((k) => k.replace(/[^a-z0-9]/g, '') === cleanName);
-  if (idx !== -1) return idx + 1;
+  // Exact catalog lookup across all 1,025 canonical species
+  if (POKEMON_BY_NAME.has(cleanName)) {
+    return POKEMON_BY_NAME.get(cleanName);
+  }
 
-  if (POPULAR_IDS[cleanName]) return POPULAR_IDS[cleanName];
+  // Allow 1 or 2 letter spelling mistakes against canonical catalog
+  const match = findClosestPokemon(cleanName, POKEMON_CATALOG);
+  if (match) return match.id;
 
   return null;
 }
@@ -261,7 +221,7 @@ function FormattedMessage({ text }) {
 const DEFAULT_WELCOME_MESSAGE = {
   id: 'welcome',
   role: 'assistant',
-  text: "Greetings Trainer. I am DexMind, your Battle Strategist and National Pokédex Intelligence. Inquire about base statistics, competitive battle matchups, counters, abilities, or team compositions across all 9 Generations.",
+  text: "Hey Trainer! ⚔️ Welcome to the Battle Coach war room. I'm DexMind, your personal battle strategist and competitive Pokédex analyst.\n\nWhether you need deep head-to-head matchup breakdowns, counter picks, team synergy audits, or movepool strategies across all 1,025 canonical species — I'm locked in and ready. Who's stepping into the arena today?",
   sources: [],
   is_unanswerable: false,
 };
@@ -367,20 +327,74 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         data.retrieval_meta?.category === 'comparison'
       );
 
-      // Extract detected entities (supporting regex extraction for cross-generation comparisons)
-      let detectedEntities = [...(data.retrieval_meta?.entities_detected || [])];
-      if (isVsQuery && detectedEntities.length < 2) {
+      // Extract raw candidate entities
+      let rawCandidates = [...(data.retrieval_meta?.entities_detected || [])];
+      if (isVsQuery && rawCandidates.length < 2) {
         const vsRegex = /(?:compare|between|matchup)\s+([a-zA-Z0-9-]+)\s+(?:and|with|vs|versus|to)\s+([a-zA-Z0-9-]+)/i;
         const directVsRegex = /([a-zA-Z0-9-]+)\s+(?:vs|versus)\s+([a-zA-Z0-9-]+)/i;
         const match = query.match(vsRegex) || query.match(directVsRegex);
         if (match && match[1] && match[2]) {
-          const e1 = match[1].trim();
-          const e2 = match[2].trim();
-          detectedEntities = [
-            e1.charAt(0).toUpperCase() + e1.slice(1),
-            e2.charAt(0).toUpperCase() + e2.slice(1),
-          ];
+          rawCandidates = [match[1].trim(), match[2].trim()];
         }
+      }
+
+      // Enforce 1 or 2 letter spelling mistakes tolerance against canonical catalog
+      let detectedEntities = [];
+      if (isVsQuery) {
+        if (rawCandidates.length >= 2) {
+          const validated = [];
+          let spellingFailure = null;
+          for (const cand of rawCandidates.slice(0, 2)) {
+            const matched = findClosestPokemon(cand);
+            if (matched) {
+              validated.push(matched.name);
+            } else {
+              // More than 2 letter mistakes or completely unrecognized entity
+              spellingFailure = cand;
+              break;
+            }
+          }
+
+          if (spellingFailure) {
+            // Formal error as requested: "only allow one or two letter spelling mistakes when you compare them with the correct spelling mistakes, or else give error formally as we are doing it now."
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `a-${Date.now()}`,
+                role: 'assistant',
+                text: `"${spellingFailure}" is outside the canonical Pokémon game records.`,
+                sources: [],
+                is_unanswerable: false,
+                is_gibberish: true,
+                detected_entities: [],
+                comparison_data: null,
+              },
+            ]);
+            return;
+          }
+          detectedEntities = validated;
+        } else {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: `a-${Date.now()}`,
+              role: 'assistant',
+              text: `"${query}" is outside the canonical Pokémon game records.`,
+              sources: [],
+              is_unanswerable: false,
+              is_gibberish: true,
+              detected_entities: [],
+              comparison_data: null,
+            },
+          ]);
+          return;
+        }
+      } else {
+        // Non-versus query: normalize recognized entities
+        detectedEntities = rawCandidates.map((c) => {
+          const m = findClosestPokemon(c);
+          return m ? m.name : c;
+        });
       }
 
       // 2. Comparison / Versus Structured Table Fetching & Synthesis
@@ -439,7 +453,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         }
       }
 
-      // Ensure any out-of-context prefix is stripped, only text after it is displayed
+      // Ensure any out-of-context prefix, citations, and context markers are stripped
       finalText = cleanOutOfContextText(finalText);
 
       const botMessage = {
@@ -448,6 +462,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         text: finalText,
         sources: finalSources,
         is_unanswerable: finalUnanswerable,
+        is_vs_query: isVsQuery,
         retrieval_meta: data.retrieval_meta,
         comparison_data: comparisonPayload,
         detected_entities: detectedEntities,
@@ -533,7 +548,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       {
         id: 'welcome',
         role: 'assistant',
-        text: "Battle session reset. Memory cleared. What Pokémon matchup or team strategy would you like to explore next?",
+        text: "Chalkboard wiped clean, Trainer! 📝 Fresh battle session initiated. Which Pokémon matchup or team strategy are we scouting next?",
         sources: [],
         is_unanswerable: false,
       },
@@ -663,7 +678,8 @@ export default function AskDex({ onCitationClick, initialQuery }) {
                             </h4>
                           </div>
                         </div>
-                      ) : (
+                      ) : m.is_vs_query ? (
+                        /* Only show versus clash image when explicitly asked! */
                         <div className="flex items-center justify-around gap-2 py-1">
                           {discussedPokemon.slice(0, 2).map((pk, pIdx) => (
                             <React.Fragment key={pk.name}>
@@ -690,6 +706,28 @@ export default function AskDex({ onCitationClick, initialQuery }) {
                                 </div>
                               </div>
                             </React.Fragment>
+                          ))}
+                        </div>
+                      ) : (
+                        /* Non-versus multi-pokemon queries show clean scouted squad cards */
+                        <div className="flex flex-wrap items-center gap-2.5 py-1">
+                          <span className="text-[11px] font-mono text-amber-400 uppercase tracking-wider font-bold shrink-0">
+                            Scouted Squad:
+                          </span>
+                          {discussedPokemon.map((pk) => (
+                            <div key={pk.name} className="flex items-center gap-2 bg-[#1e293b] border border-[#334155] px-2.5 py-1 shadow-xs">
+                              <img
+                                src={pk.sprite}
+                                alt={pk.name}
+                                className="w-6 h-6 object-contain drop-shadow-xs select-none"
+                              />
+                              <span className="text-[10px] font-mono font-bold text-yellow-400">
+                                #{String(pk.id).padStart(4, '0')}
+                              </span>
+                              <span className="text-xs font-black text-white capitalize font-sans">
+                                {pk.name}
+                              </span>
+                            </div>
                           ))}
                         </div>
                       )}
