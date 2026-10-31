@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowUpDown, AlertCircle, RefreshCw, Sparkles, Swords, Zap } from 'lucide-react';
 import { comparePokemon, fetchPokemonList } from '../services/api';
 import ComparisonCard from '../components/ComparisonCard';
+import { cleanErrorMessage } from '../utils/battleAnalysis';
 
 const COMPARISON_PRESETS = [
   { p1: 'Charizard', p2: 'Blastoise', label: 'Gen 1 Kanto Icons' },
@@ -52,7 +53,7 @@ export default function ComparePage({ compareSelection, onCitationClick }) {
       const data = await comparePokemon(a, b);
       setComparisonData(data);
     } catch (err) {
-      setError(err.message || 'Comparison failed.');
+      setError(cleanErrorMessage(err.message || 'Comparison failed.'));
     } finally {
       setLoading(false);
     }

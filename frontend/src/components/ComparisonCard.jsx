@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { getTypeStyle } from '../utils/pokemonTypes';
 import PokeBall from './PokeBall';
+import { generateComparisonAnalysis, isAbstentionText, cleanOutOfContextText } from '../utils/battleAnalysis';
 
 const STAT_CONFIG = {
   hp: { name: 'HP', icon: Heart },
@@ -52,8 +53,11 @@ export default function ComparisonCard({ data, onCitationClick }) {
   const p1Total = p1.stats?.total || 0;
   const p2Total = p2.stats?.total || 0;
 
-  // Clean raw [S1], [S2] tags from rendered analysis
-  const cleanAnalysis = analysis ? analysis.replace(/\s*\[S\d+\]/g, '') : '';
+  // Resolve tactical narrative: if backend RAG abstained (e.g. cross-generation), synthesize rich battle analysis
+  const needsAnalysisSynthesis = !analysis || isAbstentionText(analysis);
+  const cleanAnalysis = needsAnalysisSynthesis
+    ? generateComparisonAnalysis(p1, p2, stat_comparison)
+    : cleanOutOfContextText(analysis).replace(/\s*\[S\d+\]/g, '');
 
   // Deduplicate sources
   const uniqueSources = [];
