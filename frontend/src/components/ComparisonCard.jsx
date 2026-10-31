@@ -203,68 +203,102 @@ export default function ComparisonCard({ data, onCitationClick }) {
       {/* Numerical Base Stats Comparison Matrix */}
       <div className="space-y-3">
         <div className="flex items-center justify-between border-b border-[#334155] pb-2.5">
-          <h4 className="text-xs sm:text-sm font-mono uppercase tracking-wider text-amber-400 font-bold flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 bg-red-500" />
+            <span className="text-xs sm:text-sm font-mono font-bold text-red-400 uppercase">
+              {p1.name} Base
+            </span>
+          </div>
+          <h4 className="text-xs sm:text-sm font-mono uppercase tracking-wider text-yellow-400 font-black flex items-center gap-2">
             <Crosshair className="w-4 h-4 text-yellow-400" />
             Base Stats Comparison Matrix
           </h4>
-          <span className="text-xs font-mono text-slate-300">
-            Canonical Game Stats
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs sm:text-sm font-mono font-bold text-sky-400 uppercase">
+              {p2.name} Base
+            </span>
+            <span className="w-2.5 h-2.5 bg-sky-500" />
+          </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {stat_comparison && Object.entries(stat_comparison).map(([statKey, comp]) => {
             const config = STAT_CONFIG[statKey] || { name: statKey };
-            const p1Val = comp.pokemon1;
-            const p2Val = comp.pokemon2;
-            const diff = comp.diff;
+            const p1Val = comp.p1_val ?? comp.pokemon1 ?? p1.stats?.[statKey] ?? 0;
+            const p2Val = comp.p2_val ?? comp.pokemon2 ?? p2.stats?.[statKey] ?? 0;
+            const diff = comp.diff !== undefined ? comp.diff : (p1Val - p2Val);
             const p1Wins = diff > 0;
             const p2Wins = diff < 0;
 
             const maxRef = statKey === 'total' ? 800 : 255;
-            const p1Pct = Math.min(Math.round((p1Val / maxRef) * 100), 100);
-            const p2Pct = Math.min(Math.round((p2Val / maxRef) * 100), 100);
+            const p1Pct = Math.max(3, Math.min(Math.round((p1Val / maxRef) * 100), 100));
+            const p2Pct = Math.max(3, Math.min(Math.round((p2Val / maxRef) * 100), 100));
 
             return (
               <div
                 key={statKey}
-                className="bg-[#0f172a] border border-[#334155] p-3 flex flex-col gap-2"
+                className="bg-[#0f172a] border border-[#334155] p-3 flex flex-col gap-2 shadow-xs"
               >
                 <div className="flex items-center justify-between text-xs sm:text-sm font-mono">
-                  <span className={`w-14 font-black ${p1Wins ? 'text-amber-400' : 'text-slate-400'}`}>
-                    {p1Val}
-                  </span>
-                  <span className="text-white font-bold uppercase text-xs sm:text-sm flex items-center gap-2">
-                    {config.name}
-                    {diff !== 0 && (
-                      <span className={`text-xs px-2 py-0.5 font-mono font-bold ${
-                        p1Wins ? 'text-red-400 bg-red-500/20 border border-red-500/30' : 'text-sky-400 bg-sky-500/20 border border-sky-500/30'
+                  {/* P1 Value & Name */}
+                  <div className="flex items-center gap-1.5 min-w-[70px]">
+                    <span className={`text-sm sm:text-base font-black ${p1Wins ? 'text-red-400' : 'text-slate-300'}`}>
+                      {p1Val}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-sans hidden sm:inline uppercase">
+                      pts
+                    </span>
+                  </div>
+
+                  {/* Center Stat Name & Delta Badge */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-black uppercase text-xs sm:text-sm tracking-wide">
+                      {config.name}
+                    </span>
+                    {diff !== 0 ? (
+                      <span className={`text-[11px] px-2 py-0.5 font-mono font-bold border ${
+                        p1Wins
+                          ? 'text-red-300 bg-red-950/60 border-red-500/50'
+                          : 'text-sky-300 bg-sky-950/60 border-sky-500/50'
                       }`}>
-                        {diff > 0 ? `+${diff} (${p1.name})` : `${diff} (${p2.name})`}
+                        {diff > 0 ? `+${diff} ${p1.name}` : `${diff} ${p2.name}`}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] px-2 py-0.5 font-mono font-bold text-slate-400 bg-slate-800 border border-slate-700">
+                        TIED
                       </span>
                     )}
-                  </span>
-                  <span className={`w-14 text-right font-black ${p2Wins ? 'text-sky-400' : 'text-slate-400'}`}>
-                    {p2Val}
-                  </span>
+                  </div>
+
+                  {/* P2 Value & Name */}
+                  <div className="flex items-center justify-end gap-1.5 min-w-[70px]">
+                    <span className="text-[10px] text-slate-500 font-sans hidden sm:inline uppercase">
+                      pts
+                    </span>
+                    <span className={`text-sm sm:text-base font-black ${p2Wins ? 'text-sky-400' : 'text-slate-300'}`}>
+                      {p2Val}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Solid Comparative Progress Bars */}
-                <div className="grid grid-cols-2 gap-2.5 h-2.5">
-                  <div className="bg-[#1e293b] border border-[#334155] h-full overflow-hidden flex justify-end">
+                <div className="grid grid-cols-2 gap-3 h-3 bg-[#0a0f1d] p-0.5 border border-[#334155]">
+                  <div className="bg-[#1e293b]/60 h-full overflow-hidden flex justify-end">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${p1Pct}%` }}
                       transition={{ duration: 0.35, ease: 'easeOut' }}
                       className={`h-full ${p1Wins ? 'bg-red-500' : 'bg-slate-600'}`}
+                      style={{ width: `${p1Pct}%` }}
                     />
                   </div>
-                  <div className="bg-[#1e293b] border border-[#334155] h-full overflow-hidden flex justify-start">
+                  <div className="bg-[#1e293b]/60 h-full overflow-hidden flex justify-start">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${p2Pct}%` }}
                       transition={{ duration: 0.35, ease: 'easeOut' }}
                       className={`h-full ${p2Wins ? 'bg-sky-500' : 'bg-slate-600'}`}
+                      style={{ width: `${p2Pct}%` }}
                     />
                   </div>
                 </div>

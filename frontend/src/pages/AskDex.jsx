@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { motion } from 'motion/react';
 import {
   Send,
@@ -11,8 +12,13 @@ import {
   RotateCcw,
   ExternalLink,
   FileText,
+  Swords,
+  Trophy,
+  Gauge,
+  Shield,
+  Zap,
 } from 'lucide-react';
-import { askQuestion } from '../services/api';
+import { askQuestion, comparePokemon } from '../services/api';
 import PokeBall from '../components/PokeBall';
 
 const SUGGESTED_QUESTIONS = [
@@ -23,6 +29,132 @@ const SUGGESTED_QUESTIONS = [
   "Explain Eevee's evolution branches.",
   'What are the strongest Dragon-type Pokémon in Paldea?',
 ];
+
+const KANTO_NAMES = [
+  'bulbasaur', 'ivysaur', 'venusaur', 'charmander', 'charmeleon', 'charizard',
+  'squirtle', 'wartortle', 'blastoise', 'caterpie', 'metapod', 'butterfree',
+  'weedle', 'kakuna', 'beedrill', 'pidgey', 'pidgeotto', 'pidgeot',
+  'rattata', 'raticate', 'spearow', 'fearow', 'ekans', 'arbok',
+  'pikachu', 'raichu', 'sandshrew', 'sandslash', 'nidoran-f', 'nidorina',
+  'nidoqueen', 'nidoran-m', 'nidorino', 'nidoking', 'clefairy', 'clefable',
+  'vulpix', 'ninetales', 'jigglypuff', 'wigglytuff', 'zubat', 'golbat',
+  'oddish', 'gloom', 'vileplume', 'paras', 'parasect', 'venonat',
+  'venomoth', 'diglett', 'dugtrio', 'meowth', 'persian', 'psyduck',
+  'golduck', 'mankey', 'primeape', 'growlithe', 'arcanine', 'poliwag',
+  'poliwhirl', 'poliwrath', 'abra', 'kadabra', 'alakazam', 'machop',
+  'machoke', 'machamp', 'bellsprout', 'weepinbell', 'victreebel', 'tentacool',
+  'tentacruel', 'geodude', 'graveler', 'golem', 'ponyta', 'rapidash',
+  'slowpoke', 'slowbro', 'magnemite', 'magneton', 'farfetchd', 'doduo',
+  'dodrio', 'seel', 'dewgong', 'grimer', 'muk', 'shellder',
+  'cloyster', 'gastly', 'haunter', 'gengar', 'onix', 'drowzee',
+  'hypno', 'krabby', 'kingler', 'voltorb', 'electrode', 'exeggcute',
+  'exeggutor', 'cubone', 'marowak', 'hitmonlee', 'hitmonchan', 'lickitung',
+  'koffing', 'weezing', 'rhyhorn', 'rhydon', 'chansey', 'tangela',
+  'kangaskhan', 'horsea', 'seadra', 'goldeen', 'seaking', 'staryu',
+  'starmie', 'mr-mime', 'scyther', 'jynx', 'electabuzz', 'magmar',
+  'pinsir', 'tauros', 'magikarp', 'gyarados', 'lapras', 'ditto',
+  'eevee', 'vaporeon', 'jolteon', 'flareon', 'porygon', 'omanyte',
+  'omastar', 'kabuto', 'kabutops', 'aerodactyl', 'snorlax', 'articuno',
+  'zapdos', 'moltres', 'dratini', 'dragonair', 'dragonite', 'mewtwo', 'mew'
+];
+
+const POPULAR_IDS = {
+  lucario: 448,
+  greninja: 658,
+  garchomp: 445,
+  rayquaza: 384,
+  tyranitar: 248,
+  kyogre: 382,
+  groudon: 383,
+  koraidon: 1007,
+  miraidon: 1008,
+  tinkaton: 959,
+  dragapult: 887,
+  mimikyu: 778,
+  gardevoir: 282,
+  sceptile: 254,
+  blaziken: 257,
+  swampert: 260,
+  infernape: 392,
+  decidueye: 724,
+  cinderace: 815,
+  meowscarada: 908,
+};
+
+function getPokemonIdByName(name, sources = []) {
+  if (!name) return null;
+  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  if (sources && Array.isArray(sources)) {
+    for (const s of sources) {
+      if (s.pokemon_name && s.pokemon_name.toLowerCase().includes(cleanName.slice(0, 4))) {
+        const m = s.source_url?.match(/\/pokemon\/(\d+)/);
+        if (m) return parseInt(m[1], 10);
+      }
+    }
+  }
+
+  const idx = KANTO_NAMES.findIndex((k) => k.replace(/[^a-z0-9]/g, '') === cleanName);
+  if (idx !== -1) return idx + 1;
+
+  if (POPULAR_IDS[cleanName]) return POPULAR_IDS[cleanName];
+
+  return null;
+}
+
+function extractMessagePokemon(m) {
+  const result = [];
+  const seen = new Set();
+
+  const entities = m.detected_entities || m.retrieval_meta?.entities_detected || [];
+  for (const name of entities) {
+    const lower = name.toLowerCase().trim();
+    if (!seen.has(lower)) {
+      seen.add(lower);
+      const id = getPokemonIdByName(name, m.sources);
+      if (id) {
+        result.push({
+          id,
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+        });
+      }
+    }
+  }
+
+  if (result.length === 0 && m.sources && Array.isArray(m.sources)) {
+    for (const s of m.sources) {
+      if (s.pokemon_name) {
+        const lower = s.pokemon_name.toLowerCase().trim();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          const id = getPokemonIdByName(s.pokemon_name, m.sources);
+          if (id) {
+            result.push({
+              id,
+              name: s.pokemon_name.charAt(0).toUpperCase() + s.pokemon_name.slice(1),
+              sprite: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return result;
+}
+
+function isGibberishOrNoise(str) {
+  const clean = str.trim().toLowerCase();
+  if (clean.length <= 1) return true;
+  // Pure punctuation or non-alphanumeric symbols
+  if (/^[^a-z0-9]+$/i.test(clean)) return true;
+  // Repeated sequence of identical characters (e.g. "aaaaa", ".....", "????")
+  if (/^(.)\1{3,}$/.test(clean)) return true;
+  // Word >= 5 chars with zero vowels and no spaces (e.g. "asdfghjk", "qwrtypsdf")
+  if (clean.length >= 5 && !/[aeiouy]/i.test(clean) && !clean.includes(' ')) return true;
+  return false;
+}
 
 function formatContentType(type) {
   if (!type) return 'Field Record';
@@ -40,6 +172,7 @@ function FormattedMessage({ text }) {
   return (
     <div className="text-sm sm:text-base leading-relaxed text-slate-100 font-sans">
       <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
         components={{
           p: ({ children }) => (
             <p className="mb-3 last:mb-0 leading-relaxed text-slate-200">
@@ -71,6 +204,35 @@ function FormattedMessage({ text }) {
           ),
           ul: ({ children }) => <ul className="space-y-1.5 my-2.5">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal ml-5 space-y-1.5 my-2.5">{children}</ol>,
+          // GFM Tactical Table Styling
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-3.5 border border-[#334155] bg-[#0b1329] shadow-sm">
+              <table className="w-full text-left font-mono border-collapse text-xs sm:text-sm">
+                {children}
+              </table>
+            </div>
+          ),
+          thead: ({ children }) => (
+            <thead className="bg-[#0f172a] border-b-2 border-yellow-400 text-yellow-400 font-bold uppercase tracking-wider">
+              {children}
+            </thead>
+          ),
+          th: ({ children }) => (
+            <th className="px-3.5 py-2 font-black text-xs uppercase tracking-wider border-r border-[#334155] last:border-r-0">
+              {children}
+            </th>
+          ),
+          tbody: ({ children }) => (
+            <tbody className="divide-y divide-[#334155]/80">{children}</tbody>
+          ),
+          tr: ({ children }) => (
+            <tr className="hover:bg-[#1e293b]/70 transition-colors">{children}</tr>
+          ),
+          td: ({ children }) => (
+            <td className="px-3.5 py-2 text-slate-200 border-r border-[#334155]/60 last:border-r-0">
+              {children}
+            </td>
+          ),
         }}
       >
         {cleanedText}
@@ -139,15 +301,16 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       text: query,
     };
 
-    // 1. Single letter query check: Never throw error, gracefully explain message was not understood
-    if (query.length <= 1) {
+    // 1. Gibberish / Noise / Single-Letter Check:
+    // Prompt requirement: "no need to give information again of previous chat if gibberish or not understood happens"
+    if (isGibberishOrNoise(query)) {
       setMessages((prev) => [
         ...prev,
         userMessage,
         {
           id: `a-${Date.now()}`,
           role: 'assistant',
-          text: "Transmission incomplete or not understood. Single-character inputs are too short to identify a Pokémon record. Please specify a Pokémon name, move, type matchup, or battle inquiry (e.g., **Charizard**, **Pikachu counters**, or **Best Water types**).",
+          text: "Transmission incomplete or not understood. Please ask a specific inquiry about a Pokémon, battle matchup, type advantages, or team strategies (e.g., **Charizard weaknesses**, **Pikachu vs Raichu**, or **Best Water types**).",
           sources: [],
           is_unanswerable: false,
         },
@@ -175,6 +338,12 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       let finalText = data.answer || '';
       let finalSources = data.sources || [];
       let finalUnanswerable = Boolean(data.is_unanswerable);
+
+      // Check if comparison/versus was asked
+      const isVsQuery = Boolean(
+        query.match(/\b(vs|versus|compare|comparison|matchup|between)\b/i) ||
+        data.retrieval_meta?.category === 'comparison'
+      );
 
       // 2. Mixed Query Handling: Part of chat is correct, other half is wrong/out of context
       const detectedEntities = data.retrieval_meta?.entities_detected || [];
@@ -217,6 +386,17 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         }
       }
 
+      // 3. Comparison / Versus Structured Table Fetching:
+      // Prompt requirement: "Make tables for stat tier and combat profile comparison instead of showing details if versus and all is asked"
+      let comparisonPayload = null;
+      if (isVsQuery && detectedEntities.length >= 2) {
+        try {
+          comparisonPayload = await comparePokemon(detectedEntities[0], detectedEntities[1]);
+        } catch (compErr) {
+          console.warn('Could not load comparison matrix:', compErr);
+        }
+      }
+
       const botMessage = {
         id: `a-${Date.now()}`,
         role: 'assistant',
@@ -224,6 +404,8 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         sources: finalSources,
         is_unanswerable: finalUnanswerable,
         retrieval_meta: data.retrieval_meta,
+        comparison_data: comparisonPayload,
+        detected_entities: detectedEntities,
       };
 
       setMessages((prev) => [...prev, botMessage]);
@@ -365,6 +547,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-2">
           {messages.map((m) => {
             const isUser = m.role === 'user';
+            const discussedPokemon = !isUser && !m.is_error ? extractMessagePokemon(m) : [];
 
             // Deduplicate sources by pokemon_name and content_type
             const uniqueSources = [];
@@ -409,6 +592,161 @@ export default function AskDex({ onCitationClick, initialQuery }) {
                     <div className="mb-3.5 p-3 bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs sm:text-sm flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                       <span>Topic Outside Canonical Game Battle Records & Pokédex Database</span>
+                    </div>
+                  )}
+
+                  {/* Pokémon Visual Banner in Battle Coach */}
+                  {/* Prompt requirement: "show image of pokemon if it is asked in the battle coach" */}
+                  {!isUser && !m.is_error && discussedPokemon.length > 0 && (
+                    <div className="mb-4 p-3 bg-[#0b1329] border border-[#334155]">
+                      {discussedPokemon.length === 1 ? (
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-[#1e293b] border border-[#334155] p-1 flex items-center justify-center">
+                            <img
+                              src={discussedPokemon[0].sprite}
+                              alt={discussedPokemon[0].name}
+                              className="w-14 h-14 sm:w-16 sm:h-16 object-contain drop-shadow-md select-none"
+                            />
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold text-yellow-400">
+                                #{String(discussedPokemon[0].id).padStart(4, '0')}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                                Canonical Tactical Dossier
+                              </span>
+                            </div>
+                            <h4 className="text-lg sm:text-xl font-black text-white capitalize font-sans tracking-tight">
+                              {discussedPokemon[0].name}
+                            </h4>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-around gap-2 py-1">
+                          {discussedPokemon.slice(0, 2).map((pk, pIdx) => (
+                            <React.Fragment key={pk.name}>
+                              {pIdx === 1 && (
+                                <div className="w-7 h-7 rounded-full bg-[#1e293b] border border-yellow-400 text-yellow-400 font-black text-xs flex items-center justify-center shrink-0">
+                                  VS
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-14 h-14 sm:w-16 sm:h-16 shrink-0 bg-[#1e293b] border p-1 flex items-center justify-center ${pIdx === 0 ? 'border-red-500/70' : 'border-sky-500/70'}`}>
+                                  <img
+                                    src={pk.sprite}
+                                    alt={pk.name}
+                                    className="w-12 h-12 sm:w-14 sm:h-14 object-contain drop-shadow-md select-none"
+                                  />
+                                </div>
+                                <div className="flex flex-col">
+                                  <span className={`text-[10px] font-mono font-bold ${pIdx === 0 ? 'text-red-400' : 'text-sky-400'}`}>
+                                    #{String(pk.id).padStart(4, '0')}
+                                  </span>
+                                  <span className="text-sm sm:text-base font-black text-white capitalize font-sans">
+                                    {pk.name}
+                                  </span>
+                                </div>
+                              </div>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Stat Tier & Combat Profile Comparison Table Widget */}
+                  {/* Prompt requirement: "Make tables for stat tier and combat profile comparison instead of showing details if versus and all is asked" */}
+                  {!isUser && !m.is_error && m.comparison_data && (
+                    <div className="my-4 space-y-3 border border-[#334155] bg-[#0b1329] p-3.5 shadow-sm">
+                      <div className="flex items-center justify-between border-b border-[#334155] pb-2">
+                        <div className="flex items-center gap-2 text-xs font-mono font-black text-yellow-400 uppercase tracking-wider">
+                          <Swords className="w-4 h-4 text-yellow-400" />
+                          Head-to-Head Stat Tier Matrix
+                        </div>
+                        <span className="text-[11px] font-mono text-slate-400 font-bold uppercase">
+                          {m.comparison_data.pokemon1?.name} vs {m.comparison_data.pokemon2?.name}
+                        </span>
+                      </div>
+
+                      {/* Stat Matrix Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left font-mono border-collapse text-xs">
+                          <thead className="bg-[#0f172a] text-yellow-400 border-b border-[#334155]">
+                            <tr>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-slate-400">Combat Metric</th>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-red-400">{m.comparison_data.pokemon1?.name}</th>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-sky-400">{m.comparison_data.pokemon2?.name}</th>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-slate-400">Advantage</th>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-amber-400">Winner</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#334155]/60">
+                            {m.comparison_data.stat_comparison &&
+                              Object.entries(m.comparison_data.stat_comparison).map(([statKey, s]) => {
+                                const p1Val = s.p1_val ?? s.pokemon1 ?? m.comparison_data.pokemon1?.stats?.[statKey] ?? 0;
+                                const p2Val = s.p2_val ?? s.pokemon2 ?? m.comparison_data.pokemon2?.stats?.[statKey] ?? 0;
+                                const diff = s.diff !== undefined ? s.diff : (p1Val - p2Val);
+                                const winner = s.winner || (diff > 0 ? m.comparison_data.pokemon1?.name : diff < 0 ? m.comparison_data.pokemon2?.name : 'Tied');
+                                const statLabel = statKey === 'total' ? 'BST Total' : statKey.replace(/_/g, ' ').toUpperCase();
+
+                                return (
+                                  <tr key={statKey} className="hover:bg-[#1e293b]/50">
+                                    <td className="px-3 py-1.5 font-bold text-white uppercase text-xs">{statLabel}</td>
+                                    <td className={`px-3 py-1.5 font-black ${diff > 0 ? 'text-red-400' : 'text-slate-300'}`}>{p1Val}</td>
+                                    <td className={`px-3 py-1.5 font-black ${diff < 0 ? 'text-sky-400' : 'text-slate-300'}`}>{p2Val}</td>
+                                    <td className="px-3 py-1.5 text-slate-300 font-bold">
+                                      {diff > 0 ? `+${diff}` : diff < 0 ? `${diff}` : '0'}
+                                    </td>
+                                    <td className="px-3 py-1.5">
+                                      <span
+                                        className={`px-2 py-0.5 text-[10px] font-bold uppercase border ${
+                                          winner === m.comparison_data.pokemon1?.name
+                                            ? 'text-red-300 bg-red-950/60 border-red-500/40'
+                                            : winner === m.comparison_data.pokemon2?.name
+                                            ? 'text-sky-300 bg-sky-950/60 border-sky-500/40'
+                                            : 'text-slate-400 bg-slate-800 border-slate-700'
+                                        }`}
+                                      >
+                                        {winner}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Combat Profile Table */}
+                      <div className="overflow-x-auto pt-1">
+                        <table className="w-full text-left font-mono border-collapse text-xs">
+                          <thead className="bg-[#0f172a] text-amber-400 border-b border-[#334155]">
+                            <tr>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-slate-400">Combat Profile</th>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-red-400">{m.comparison_data.pokemon1?.name}</th>
+                              <th className="px-3 py-1.5 uppercase text-[11px] text-sky-400">{m.comparison_data.pokemon2?.name}</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[#334155]/60 text-slate-200">
+                            <tr>
+                              <td className="px-3 py-1.5 font-bold text-white">Elemental Typing</td>
+                              <td className="px-3 py-1.5 text-amber-300 font-semibold">{m.comparison_data.pokemon1?.types?.map(t => typeof t === 'string' ? t : t.name).join(' / ')}</td>
+                              <td className="px-3 py-1.5 text-amber-300 font-semibold">{m.comparison_data.pokemon2?.types?.map(t => typeof t === 'string' ? t : t.name).join(' / ')}</td>
+                            </tr>
+                            <tr>
+                              <td className="px-3 py-1.5 font-bold text-white">Primary Ability</td>
+                              <td className="px-3 py-1.5">{m.comparison_data.pokemon1?.abilities?.[0]?.name || 'N/A'}</td>
+                              <td className="px-3 py-1.5">{m.comparison_data.pokemon2?.abilities?.[0]?.name || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                              <td className="px-3 py-1.5 font-bold text-white">Size (Height / Weight)</td>
+                              <td className="px-3 py-1.5">{m.comparison_data.pokemon1?.height}m • {m.comparison_data.pokemon1?.weight}kg</td>
+                              <td className="px-3 py-1.5">{m.comparison_data.pokemon2?.height}m • {m.comparison_data.pokemon2?.weight}kg</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   )}
 
@@ -533,27 +871,36 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         </div>
 
         {/* Input Box Area */}
+        {/* Prompt requirement: "Shift+Enter should make new line and not send the message." */}
         <div className="pt-4 border-t border-[#334155]">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-            className="relative flex items-center"
-          >
-            <input
+          <div className="relative flex items-center">
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={2}
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (e.shiftKey) {
+                    // Shift + Enter: allow newline to happen naturally
+                    return;
+                  }
+                  // Enter without Shift: send message
+                  e.preventDefault();
+                  if (inputQuery.trim() && !loading) {
+                    handleSend();
+                  }
+                }
+              }}
               placeholder="Ask Pokédex AI about matchups, counters, stats, or team composition across Gen 1–9..."
               disabled={loading}
-              className="w-full bg-[#0f172a] border-2 border-[#475569] focus:border-yellow-400 px-5 py-3.5 pr-16 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-hidden transition-colors font-sans"
+              className="w-full bg-[#0f172a] border-2 border-[#475569] focus:border-yellow-400 p-3.5 pr-16 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-hidden transition-colors font-sans resize-none rounded-none leading-relaxed"
             />
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleSend()}
               disabled={!inputQuery.trim() || loading}
-              className={`absolute right-2 px-4 py-2 transition-colors font-black text-xs sm:text-sm uppercase tracking-wider ${
+              className={`absolute right-3.5 top-3.5 px-3.5 py-2 transition-colors font-black text-xs sm:text-sm uppercase tracking-wider ${
                 inputQuery.trim() && !loading
                   ? 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 cursor-pointer border border-yellow-300'
                   : 'bg-slate-700 text-slate-500 cursor-not-allowed border border-slate-600'
@@ -562,14 +909,14 @@ export default function AskDex({ onCitationClick, initialQuery }) {
             >
               <Send className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
             </button>
-          </form>
+          </div>
 
-          <div className="flex items-center justify-between text-xs text-slate-400 mt-2.5 font-mono px-1">
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-2 font-mono px-1">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 bg-emerald-400" />
               Trainer Memory Active • 6-Turn Context Retention
             </span>
-            <span>Press Enter to Submit</span>
+            <span>Enter to send • Shift+Enter for new line</span>
           </div>
         </div>
       </div>
