@@ -147,13 +147,23 @@ def retrieve_for_subquery(
     candidate_limit: int = 8
 ) -> List[Dict[str, Any]]:
     """Runs vector search + keyword search and fuses via RRF for a single subquery."""
-    query_vector = embed_text(query_text)
+    vector_results = []
+    try:
+        query_vector = embed_text(query_text)
+        if query_vector:
+            vector_results = execute_vector_search(query_vector, filter_dict=filter_dict, limit=candidate_limit)
+    except Exception as e:
+        logger.warning(f"Vector search skipped or failed: {e}")
 
-    vector_results = execute_vector_search(query_vector, filter_dict=filter_dict, limit=candidate_limit)
-    text_results = execute_keyword_search(query_text, filter_dict=filter_dict, limit=candidate_limit)
+    text_results = []
+    try:
+        text_results = execute_keyword_search(query_text, filter_dict=filter_dict, limit=candidate_limit)
+    except Exception as e:
+        logger.warning(f"Keyword search skipped or failed: {e}")
 
-    fused = reciprocal_rank_fusion(vector_results, text_results, k=60, top_n=candidate_limit)
-    return fused
+    if vector_results and text_results:
+        return reciprocal_rank_fusion(vector_results, text_results, k=60, top_n=candidate_limit)
+    return vector_results or text_results
 
 def retrieve_evidence(
     query: str,
@@ -167,7 +177,7 @@ def retrieve_evidence(
     """
     analysis: QueryAnalysis = route_query(query, history=history)
 
-    if analysis.category == "out_of_scope":
+    if analysis.category in ["out_of_scope", "conversational"]:
         return {
             "analysis": analysis.to_dict(),
             "total_candidates": 0,

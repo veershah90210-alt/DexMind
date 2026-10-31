@@ -86,6 +86,16 @@ CORE OPERATING DIRECTIVES:
      * State clearly:
        "I couldn't verify this information using the sources currently indexed in DexMind. The current database contains canonical Pokémon video game data (Generations 1 through 9) and does not contain the required [specific topic, e.g. anime casting / voice actor / TCG price] records."
    - NEVER abstain on valid battle tactics, team assembly, matchup advice, or competitive questions. Always use the indexed evidence to reason and provide expert recommendations!
+
+4. CONVERSATIONAL & GENERAL MECHANICS DIRECTIVE (WHEN NOT ASKED ABOUT A POKÉMON):
+   - For greetings ("hello", "hi", "hey", "who are you", "what can you do", etc.):
+     * Respond warmly, politely, and concisely as DexMind.
+     * DO NOT mention any particular Pokémon species.
+     * Do NOT cite sources for greetings.
+   - For inquiries about battle mechanics, types, rules, damage formulas, stat definitions, items, or general strategy WITHOUT a specific Pokémon named:
+     * Provide a thorough, objective, and clear explanation of the mechanics or concepts requested.
+     * ABSOLUTE RULE: DO NOT arbitrarily pick, force, or explicitly mention any particular Pokémon species (e.g. do NOT mention Pikachu, Charizard, etc.) unless the user specifically asks for examples or Pokémon recommendations.
+     * Keep the response strictly focused on the requested concept, type, or rule.
 """
 
 def build_rag_prompt(
@@ -172,9 +182,26 @@ def validate_citations(answer: str, retrieved_chunks: List[Dict[str, Any]]) -> D
 def generate_rag_response(
     query: str,
     retrieved_chunks: List[Dict[str, Any]],
-    history: Optional[List[Dict[str, str]]] = None
+    history: Optional[List[Dict[str, str]]] = None,
+    category: Optional[str] = None
 ) -> Dict[str, Any]:
     """Coordinates context construction, LLM generation, citation validation, and evidence sufficiency checking."""
+    # Conversational greeting / introduction handling
+    from app.rag.query_router import is_conversational_query
+    if category == "conversational" or (not retrieved_chunks and is_conversational_query(query, [])):
+        greeting_answer = (
+            "Greetings, Trainer! I am DexMind, your elite Pokémon battle tactician and competitive coach.\n\n"
+            "I'm locked in and ready to assist you with battle matchups, type effectiveness, base stat analysis, "
+            "moveset optimizations, and competitive team strategy across all 1,025 canonical species.\n\n"
+            "Which battle matchup, strategy, or game mechanic would you like to explore today?"
+        )
+        return {
+            "answer": greeting_answer,
+            "citations": [],
+            "sources": [],
+            "is_unanswerable": False
+        }
+
     if not retrieved_chunks:
         answer = (
             f'"{query.strip()}" is outside canonical Pokémon game records. '
@@ -205,17 +232,19 @@ def generate_rag_response(
             "source_url": s.get("source_url")
         })
 
-    # If answer didn't cite anything but also wasn't unanswerable, provide the top retrieved chunks as reference
+    # If answer didn't cite anything but also wasn't unanswerable, only provide top retrieved chunks if a specific pokemon was actually in the query
     if not formatted_sources and not validation["is_unanswerable"] and retrieved_chunks:
-        for s in retrieved_chunks[:3]:
-            formatted_sources.append({
-                "citation_tag": s.get("citation_tag"),
-                "pokemon_name": s.get("pokemon_name"),
-                "content_type": s.get("content_type"),
-                "version_group": s.get("version_group"),
-                "content": s.get("content"),
-                "source_url": s.get("source_url")
-            })
+        query_lower = query.lower()
+        if any(c.get("pokemon_name", "").lower() in query_lower for c in retrieved_chunks if c.get("pokemon_name")):
+            for s in retrieved_chunks[:3]:
+                formatted_sources.append({
+                    "citation_tag": s.get("citation_tag"),
+                    "pokemon_name": s.get("pokemon_name"),
+                    "content_type": s.get("content_type"),
+                    "version_group": s.get("version_group"),
+                    "content": s.get("content"),
+                    "source_url": s.get("source_url")
+                })
 
     return {
         "answer": raw_answer,

@@ -29,7 +29,8 @@ async def ask_question(req: AskRequest):
         selected_chunks = retrieval_result.get("selected_chunks", [])
 
         # Generate grounded answer with conversation history
-        rag_output = generate_rag_response(req.question, selected_chunks, history=req.history)
+        category = retrieval_result.get("analysis", {}).get("category")
+        rag_output = generate_rag_response(req.question, selected_chunks, history=req.history, category=category)
 
         return {
             "question": req.question,

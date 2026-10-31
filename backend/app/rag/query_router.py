@@ -64,21 +64,6 @@ def levenshtein_distance(s1: str, s2: str) -> int:
         prev = curr
     return prev[-1]
 
-def match_closest_pokemon(word: str) -> Optional[str]:
-    """Matches a word against all canonical Pokémon with up to 1-2 typo allowance."""
-    w = word.strip().lower()
-    if len(w) < 3:
-        return None
-    if w in ALL_POKEMON_SET:
-        return w.replace("-", " ").title()
-    max_dist = 1 if len(w) <= 4 else 2
-    for p in ALL_POKEMON_SET:
-        if abs(len(w) - len(p)) > max_dist:
-            continue
-        if levenshtein_distance(w, p) <= max_dist:
-            return p.replace("-", " ").title()
-    return None
-
 POKEMON_TYPES = {
     "normal", "fire", "water", "grass", "electric", "ice", "fighting", "poison", "ground",
     "flying", "psychic", "bug", "rock", "ghost", "dragon", "steel", "dark", "fairy", "stellar"
@@ -101,8 +86,65 @@ POKEMON_GAME_KEYWORDS = [
 ]
 
 CONVERSATIONAL_KEYWORDS = [
-    "hello", "hi", "hey", "greetings", "help", "who are you", "what can you do", "commands", "clear", "reset", "thanks", "thank you"
+    "hello", "hi", "hey", "heya", "howdy", "hola", "greetings", "help", "who are you",
+    "what can you do", "commands", "clear", "reset", "thanks", "thank you", "thx",
+    "good morning", "good afternoon", "good evening", "how are you", "yo", "sup"
 ]
+
+COMMON_EXCLUDED_WORDS = {
+    # Greetings & conversation
+    "hello", "hi", "hey", "heya", "howdy", "hola", "greetings", "help", "who", "what", "where", "when", "why",
+    "how", "good", "morning", "afternoon", "evening", "night", "thanks", "thank", "you", "commands", "clear",
+    "reset", "yo", "sup", "bye", "goodbye", "cool", "nice", "okay", "sure", "well", "yes", "yeah", "nah", "nope",
+    # English stop words / general words
+    "the", "and", "for", "with", "about", "give", "tell", "show", "can", "could", "would", "will", "are", "is",
+    "was", "were", "this", "that", "some", "all", "any", "best", "most", "more", "like", "other", "another",
+    "does", "have", "has", "had", "name", "names", "need", "play", "make", "take", "find", "look", "from",
+    "into", "over", "under", "than", "then", "just", "very", "much", "many", "such", "both", "each", "every",
+    # Battle & game mechanics words
+    "stat", "stats", "rule", "rules", "game", "play", "type", "types", "weak", "move", "moves", "item", "items",
+    "team", "teams", "lead", "tank", "wall", "buff", "nerf", "tier", "meta", "turn", "turns", "crit", "hits",
+    "damage", "speed", "power", "level", "form", "forms", "mode", "modes", "rank", "ball", "zone"
+}
+
+GREETING_PATTERNS = [
+    r'^(hi|hello|hey|heya|howdy|hola|yo|sup|greetings)\b',
+    r'^(good\s+(morning|afternoon|evening|day|night))\b',
+    r'^(who\s+are\s+you|what\s+are\s+you|what\s+can\s+you\s+do|help|commands|how\s+does\s+this\s+work|what\s+is\s+dexmind)\b',
+    r'^(how\s+are\s+you|hows\s+it\s+going|how\s+is\s+it\s+going)\b',
+    r'^(thanks|thank\s+you|thx|bye|goodbye)\b',
+]
+
+def is_conversational_query(query: str, found_pokemon: Optional[List[str]] = None) -> bool:
+    """Verifies whether the inquiry is a greeting or general conversational message without any Pokémon specified."""
+    if found_pokemon:
+        return False
+    q = query.strip().lower()
+    for pat in GREETING_PATTERNS:
+        if re.search(pat, q):
+            return True
+    words = re.findall(r'\b[a-z0-9-]+\b', q)
+    if words and all(w in COMMON_EXCLUDED_WORDS for w in words):
+        return True
+    return False
+
+def match_closest_pokemon(word: str) -> Optional[str]:
+    """Matches a word against all canonical Pokémon with up to 1-2 typo allowance."""
+    w = word.strip().lower()
+    if len(w) < 3:
+        return None
+    # Never match excluded common words, elemental types, or game keywords as typos of Pokémon
+    if w in COMMON_EXCLUDED_WORDS or w in POKEMON_TYPES or w in POKEMON_GAME_KEYWORDS:
+        return None
+    if w in ALL_POKEMON_SET:
+        return w.replace("-", " ").title()
+    max_dist = 1 if len(w) <= 4 else 2
+    for p in ALL_POKEMON_SET:
+        if abs(len(w) - len(p)) > max_dist:
+            continue
+        if levenshtein_distance(w, p) <= max_dist:
+            return p.replace("-", " ").title()
+    return None
 
 def is_pokemon_domain_query(query: str, found_pokemon: List[str]) -> bool:
     """Verifies whether the inquiry pertains to the Pokémon domain."""
@@ -160,6 +202,10 @@ class QueryAnalysis:
 def contextualize_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> str:
     """If conversational history exists and the query is anaphoric/follow-up, reformulates it into a standalone query."""
     if not history or len(history) == 0:
+        return query
+
+    # Do not contextualize greetings or conversational messages with prior pokemon
+    if is_conversational_query(query, []):
         return query
 
     query_lower = query.lower()
@@ -242,7 +288,17 @@ def route_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> Q
                 if m and m not in found_pokemon:
                     found_pokemon.append(m)
 
-    # 2. Domain check: If no pokemon found and query does not contain Pokemon domain terms, mark out of scope
+    # 2. Conversational check: if greeting/help and no pokemon mentioned, route as conversational
+    if is_conversational_query(effective_query, found_pokemon):
+        return QueryAnalysis(
+            category="conversational",
+            pokemon_entities=[],
+            sub_queries=[],
+            is_comparison=False,
+            content_type_filter=None
+        )
+
+    # 3. Domain check: If no pokemon found and query does not contain Pokemon domain terms, mark out of scope
     if not is_pokemon_domain_query(effective_query, found_pokemon):
         logger.info(f"Query '{query}' determined out of scope for Pokemon domain.")
         return QueryAnalysis(

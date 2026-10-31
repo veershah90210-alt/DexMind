@@ -37,6 +37,7 @@ app.include_router(ask_router)
 app.include_router(compare_router)
 app.include_router(team_router)
 
+@app.get("/health", tags=["Health"])
 @app.get("/api/health", tags=["Health"])
 def health_check():
     """Checks backend, MongoDB connectivity, and configuration status."""
