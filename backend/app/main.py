@@ -53,11 +53,22 @@ def health_check():
         }
     }
 
-@app.get("/")
-def root():
-    return {
-        "app": "DexMind",
-        "description": "Functional RAG-Powered Pokédex API",
-        "docs": "/docs",
-        "health": "/api/health"
-    }
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
+# If compiled frontend assets exist, serve them as static files
+static_dir = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+if not static_dir.exists():
+    static_dir = Path(__file__).resolve().parent.parent / "dist"
+
+if static_dir.exists():
+    app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="static")
+else:
+    @app.get("/")
+    def root():
+        return {
+            "app": "DexMind",
+            "description": "Functional RAG-Powered Pokédex API",
+            "docs": "/docs",
+            "health": "/api/health"
+        }

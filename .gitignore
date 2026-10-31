@@ -82,6 +82,10 @@ huggingface/
 # ============================================
 # OS & Editor Files
 # ============================================
+server-dump.txt
+*.dump
+*.log
+.playwright-cli/
 .DS_Store
 Thumbs.db
 desktop.ini
