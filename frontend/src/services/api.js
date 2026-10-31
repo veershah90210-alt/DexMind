@@ -25,8 +25,10 @@ export async function fetchIngestStatus() {
 export async function fetchPokemonList(params = {}) {
   const query = new URLSearchParams();
   if (params.search) query.append('search', params.search);
-  if (params.type) query.append('type', params.type);
-  if (params.generation) query.append('generation', params.generation);
+  if (params.type && params.type !== 'All') query.append('type', params.type);
+  if (params.generation && params.generation !== 'All') query.append('generation', params.generation);
+  if (params.page) query.append('page', params.page);
+  if (params.limit) query.append('limit', params.limit);
 
   const url = `${API_BASE}/api/pokemon${query.toString() ? `?${query.toString()}` : ''}`;
   const res = await fetch(url);

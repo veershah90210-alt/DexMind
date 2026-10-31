@@ -1,4 +1,5 @@
 import re
+import math
 import logging
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
@@ -11,36 +12,56 @@ logger = logging.getLogger("dexmind.routes.pokemon")
 async def list_pokemon(
     search: Optional[str] = Query(None, description="Search by Pokémon name"),
     type: Optional[str] = Query(None, description="Filter by Pokémon type (e.g. Fire, Water)"),
-    generation: Optional[int] = Query(None, description="Filter by generation (1 for Kanto)")
+    generation: Optional[int] = Query(None, description="Filter by generation (1 to 9)"),
+    page: Optional[int] = Query(None, description="Page number (1-based)", ge=1),
+    limit: Optional[int] = Query(None, description="Items per page", ge=1, le=100)
 ):
-    """Returns a list of Pokémon with optional search and filters."""
+    """Returns a list of Pokémon with optional search, filters, and pagination."""
     try:
         col = get_pokemon_col()
         query = {}
 
-        if search:
+        if search and isinstance(search, str):
             escaped = re.escape(search.strip())
             query["name"] = {"$regex": escaped, "$options": "i"}
 
-        if type:
+        if type and isinstance(type, str) and type.lower() != "all":
             query["types"] = {"$regex": f"^{re.escape(type.strip())}$", "$options": "i"}
 
-        if generation:
+        if generation and isinstance(generation, int) and generation > 0:
             query["generation"] = generation
 
-        # Exclude large raw subdocuments if any, sort by id ascending
-        cursor = col.find(
-            query,
-            {
-                "id": 1,
-                "name": 1,
-                "types": 1,
-                "stats": 1,
-                "sprite_url": 1,
-                "generation": 1,
-                "genus": 1
+        projection = {
+            "id": 1,
+            "name": 1,
+            "types": 1,
+            "stats": 1,
+            "sprite_url": 1,
+            "generation": 1,
+            "genus": 1
+        }
+
+        # If pagination parameters are supplied
+        if page is not None and isinstance(page, int) and limit is not None and isinstance(limit, int):
+            total_count = col.count_documents(query)
+            skip = (page - 1) * limit
+            cursor = col.find(query, projection).sort("id", 1).skip(skip).limit(limit)
+
+            pokemon_list = list(cursor)
+            for p in pokemon_list:
+                p["_id"] = str(p["_id"])
+
+            total_pages = math.ceil(total_count / limit) if limit > 0 else 1
+            return {
+                "count": total_count,
+                "page": page,
+                "limit": limit,
+                "total_pages": total_pages,
+                "results": pokemon_list
             }
-        ).sort("id", 1)
+
+        # Exclude large raw subdocuments if any, sort by id ascending
+        cursor = col.find(query, projection).sort("id", 1)
 
         pokemon_list = list(cursor)
         for p in pokemon_list:

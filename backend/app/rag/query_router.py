@@ -1,5 +1,7 @@
 import re
+import json
 import logging
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger("dexmind.query_router")
@@ -31,6 +33,19 @@ KANTO_POKEMON = [
     "omastar", "kabuto", "kabutops", "aerodactyl", "snorlax", "articuno",
     "zapdos", "moltres", "dratini", "dragonair", "dragonite", "mewtwo", "mew"
 ]
+
+ALL_POKEMON_SET = set(KANTO_POKEMON)
+_names_file = Path(__file__).parent / "all_pokemon_names.json"
+if _names_file.exists():
+    try:
+        with open(_names_file, "r", encoding="utf-8") as _f:
+            for _name in json.load(_f):
+                _n = _name.lower().strip()
+                if len(_n) >= 3:
+                    ALL_POKEMON_SET.add(_n)
+                    ALL_POKEMON_SET.add(_n.replace("-", " "))
+    except Exception as _ex:
+        logger.warning(f"Could not load all_pokemon_names.json: {_ex}")
 
 class QueryAnalysis:
     def __init__(
@@ -116,10 +131,12 @@ def route_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> Q
     # 1. Extract Pokémon entities mentioned
     found_pokemon = []
     # Sort by length descending to match e.g. "victreebel" before "bell" or multi-word
-    for p in sorted(KANTO_POKEMON, key=len, reverse=True):
+    for p in sorted(ALL_POKEMON_SET, key=len, reverse=True):
         pattern = r'\b' + re.escape(p) + r'\b'
         if re.search(pattern, query_lower):
-            found_pokemon.append(p.capitalize())
+            canonical = p.replace("-", " ").title()
+            if canonical not in found_pokemon:
+                found_pokemon.append(canonical)
 
     # Detect team building and counter strategy intents
     team_keywords = ["team", "assemble", "build a team", "build me a team", "squad", "roster", "lineup"]

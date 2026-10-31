@@ -11,10 +11,28 @@ import {
   Sparkles,
   Trophy,
   Gauge,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Layers,
 } from 'lucide-react';
 import { fetchPokemonList, fetchPokemonDetail } from '../services/api';
 import PokemonCard from '../components/PokemonCard';
 import { getTypeStyle } from '../utils/pokemonTypes';
+
+const GENERATIONS = [
+  { id: 'All', label: 'All Gens', region: 'All', range: '1–1025' },
+  { id: 1, label: 'Gen 1', region: 'Kanto', range: '1–151' },
+  { id: 2, label: 'Gen 2', region: 'Johto', range: '152–251' },
+  { id: 3, label: 'Gen 3', region: 'Hoenn', range: '252–386' },
+  { id: 4, label: 'Gen 4', region: 'Sinnoh', range: '387–493' },
+  { id: 5, label: 'Gen 5', region: 'Unova', range: '494–649' },
+  { id: 6, label: 'Gen 6', region: 'Kalos', range: '650–721' },
+  { id: 7, label: 'Gen 7', region: 'Alola', range: '722–809' },
+  { id: 8, label: 'Gen 8', region: 'Galar', range: '810–905' },
+  { id: 9, label: 'Gen 9', region: 'Paldea', range: '906–1025' },
+];
 
 const ALL_TYPES = [
   'All',
@@ -57,6 +75,11 @@ export default function Pokedex({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('All');
+  const [selectedGen, setSelectedGen] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(48);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [selectedPokemon, setSelectedPokemon] = useState(null);
 
   const searchInputRef = useRef(null);
@@ -76,12 +99,28 @@ export default function Pokedex({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedPokemon]);
 
+  // Reset to page 1 on filter or search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedGen, selectedType, searchTerm, pageSize]);
+
   const loadPokemon = async () => {
     setLoading(true);
     try {
       const typeFilter = selectedType === 'All' ? null : selectedType;
-      const res = await fetchPokemonList({ type: typeFilter });
-      setPokemonList(res.results || []);
+      const genFilter = selectedGen === 'All' ? null : Number(selectedGen);
+      const res = await fetchPokemonList({
+        search: searchTerm.trim() || null,
+        type: typeFilter,
+        generation: genFilter,
+        page: currentPage,
+        limit: pageSize,
+      });
+
+      const list = res.results || [];
+      setPokemonList(list);
+      setTotalCount(res.count ?? list.length);
+      setTotalPages(res.total_pages || Math.max(1, Math.ceil((res.count || list.length) / pageSize)));
     } catch (err) {
       console.error('Failed to load Pokémon', err);
     } finally {
@@ -90,8 +129,11 @@ export default function Pokedex({
   };
 
   useEffect(() => {
-    loadPokemon();
-  }, [selectedType]);
+    const debounceTimer = setTimeout(() => {
+      loadPokemon();
+    }, 200);
+    return () => clearTimeout(debounceTimer);
+  }, [selectedGen, selectedType, searchTerm, currentPage, pageSize]);
 
   const handleCardClick = async (p) => {
     setSelectedPokemon(p);
@@ -103,9 +145,31 @@ export default function Pokedex({
     }
   };
 
-  const filteredList = pokemonList.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
-  );
+  const handlePageChange = (page) => {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Generate pagination buttons with smart ellipsis
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  const startRecord = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endRecord = Math.min(currentPage * pageSize, totalCount);
 
   const modalPrimaryType = selectedPokemon?.types?.[0]
     ? typeof selectedPokemon.types[0] === 'string'
@@ -116,10 +180,10 @@ export default function Pokedex({
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto py-2">
-      {/* Top Controls: Search, Type filter, Compare bar */}
+      {/* Top Controls: Search, Generation selector, Type filter, Compare bar */}
       <div className="bg-[#10131d] border border-white/[0.08] rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
+        {/* Row 1: Search & Compare Button */}
         <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-          {/* Search Box */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
             <input
@@ -127,7 +191,7 @@ export default function Pokedex({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search Kanto Pokémon by name... (Press /)"
+              placeholder="Search Pokémon by name across Gen 1–9... (Press /)"
               className="w-full bg-[#090a10] border border-white/[0.1] focus:border-red-500 rounded-xl pl-10 pr-9 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-hidden transition-all shadow-inner"
             />
             {searchTerm && (
@@ -152,9 +216,40 @@ export default function Pokedex({
           )}
         </div>
 
-        {/* Type Filter Pills Row */}
+        {/* Row 2: Generation Filter Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <div className="flex items-center gap-1 text-zinc-400 font-mono text-[11px] shrink-0 mr-1">
+          <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-[11px] shrink-0 mr-1">
+            <Layers className="w-3.5 h-3.5 text-red-500" />
+            <span>Gen:</span>
+          </div>
+          <div className="flex gap-1.5 flex-nowrap">
+            {GENERATIONS.map((g) => {
+              const isSelected = selectedGen === g.id;
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => setSelectedGen(g.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-red-600 text-white shadow-xs font-bold'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-400 hover:text-zinc-200 border border-white/[0.06]'
+                  }`}
+                >
+                  <span>{g.label}</span>
+                  {g.region !== 'All' && (
+                    <span className={`text-[10px] opacity-75 font-mono ${isSelected ? 'text-red-100' : 'text-zinc-500'}`}>
+                      {g.region}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Row 3: Type Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
+          <div className="flex items-center gap-1.5 text-zinc-400 font-mono text-[11px] shrink-0 mr-1">
             <Filter className="w-3.5 h-3.5 text-red-400" />
             <span>Type:</span>
           </div>
@@ -178,15 +273,53 @@ export default function Pokedex({
           </div>
         </div>
 
-        {/* Results Counter */}
-        <div className="flex items-center justify-between text-[11px] font-mono text-zinc-500 pt-1 border-t border-white/[0.04]">
-          <span>
-            Showing <strong className="text-zinc-300">{filteredList.length}</strong> of{' '}
-            <strong className="text-zinc-300">151</strong> Kanto Pokémon
-          </span>
-          {selectedType !== 'All' && (
-            <span className="text-red-400">Filtered by: {selectedType}</span>
-          )}
+        {/* Row 4: Results Counter & Quick Reset */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11px] font-mono text-zinc-500 pt-2 border-t border-white/[0.04] gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span>
+              Showing <strong className="text-zinc-200 font-bold">{startRecord}–{endRecord}</strong> of{' '}
+              <strong className="text-zinc-200 font-bold">{totalCount}</strong> Pokémon
+            </span>
+            {selectedGen !== 'All' && (
+              <span className="text-red-400 font-semibold">• Gen {selectedGen}</span>
+            )}
+            {selectedType !== 'All' && (
+              <span className="text-amber-400 font-semibold">• {selectedType} type</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Page Size Selector */}
+            <div className="flex items-center gap-1.5 text-zinc-400">
+              <span className="text-[10px]">Per page:</span>
+              {[24, 48, 96].map((size) => (
+                <button
+                  key={size}
+                  onClick={() => setPageSize(size)}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer ${
+                    pageSize === size
+                      ? 'bg-white/[0.12] text-white font-bold'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+
+            {(selectedGen !== 'All' || selectedType !== 'All' || searchTerm) && (
+              <button
+                onClick={() => {
+                  setSelectedGen('All');
+                  setSelectedType('All');
+                  setSearchTerm('');
+                }}
+                className="text-red-400 hover:text-red-300 underline cursor-pointer text-[10px]"
+              >
+                Reset filters
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -196,15 +329,16 @@ export default function Pokedex({
           <div className="w-8 h-8 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
           <span>Querying MongoDB Atlas Pokémon collection...</span>
         </div>
-      ) : filteredList.length === 0 ? (
+      ) : pokemonList.length === 0 ? (
         <div className="py-20 text-center bg-[#10131d] rounded-2xl border border-white/[0.08] p-8 space-y-4">
           <p className="text-zinc-400 text-sm">
-            No Pokémon found matching "{searchTerm}".
+            No Pokémon found matching your query.
           </p>
           <button
             onClick={() => {
               setSearchTerm('');
               setSelectedType('All');
+              setSelectedGen('All');
             }}
             className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-xs font-semibold border border-white/[0.08] cursor-pointer"
           >
@@ -212,19 +346,100 @@ export default function Pokedex({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {filteredList.map((p) => {
-            const isSelected = compareSelection?.some((sel) => sel.id === p.id);
-            return (
-              <PokemonCard
-                key={p.id}
-                pokemon={p}
-                onClick={handleCardClick}
-                onSelectCompare={onSelectForCompare}
-                isSelectedForCompare={isSelected}
-              />
-            );
-          })}
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {pokemonList.map((p) => {
+              const isSelected = compareSelection?.some((sel) => sel.id === p.id);
+              return (
+                <PokemonCard
+                  key={p.id}
+                  pokemon={p}
+                  onClick={handleCardClick}
+                  onSelectCompare={onSelectForCompare}
+                  isSelectedForCompare={isSelected}
+                />
+              );
+            })}
+          </div>
+
+          {/* Pagination Navigation Bar */}
+          {totalPages > 1 && (
+            <div className="bg-[#10131d] border border-white/[0.08] rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <span className="font-mono text-zinc-400 text-[11px]">
+                Page <strong className="text-white">{currentPage}</strong> of{' '}
+                <strong className="text-white">{totalPages}</strong>
+              </span>
+
+              <div className="flex items-center gap-1 font-mono">
+                {/* First Page Button */}
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white/[0.08] transition-colors cursor-pointer"
+                  title="First Page"
+                >
+                  <ChevronsLeft className="w-4 h-4" />
+                </button>
+
+                {/* Prev Button */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white/[0.08] transition-colors cursor-pointer"
+                  title="Previous Page"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {/* Numbered Page Buttons */}
+                <div className="flex items-center gap-1 px-1">
+                  {getPageNumbers().map((item, idx) => {
+                    if (item === '...') {
+                      return (
+                        <span key={`ellipsis-${idx}`} className="px-1 text-zinc-600 font-mono text-xs">
+                          ...
+                        </span>
+                      );
+                    }
+                    const isCurrent = item === currentPage;
+                    return (
+                      <button
+                        key={item}
+                        onClick={() => handlePageChange(item)}
+                        className={`min-w-8 h-8 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                          isCurrent
+                            ? 'bg-red-600 text-white shadow-md shadow-red-600/30'
+                            : 'border border-white/[0.06] bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/[0.06]'
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white/[0.08] transition-colors cursor-pointer"
+                  title="Next Page"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                {/* Last Page Button */}
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="p-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] text-zinc-400 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-white/[0.08] transition-colors cursor-pointer"
+                  title="Last Page"
+                >
+                  <ChevronsRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -7,6 +7,18 @@ logger = logging.getLogger("dexmind.pokeapi")
 
 POKEAPI_BASE = "https://pokeapi.co/api/v2"
 
+ROMAN_GEN_MAP = {
+    "generation-i": 1,
+    "generation-ii": 2,
+    "generation-iii": 3,
+    "generation-iv": 4,
+    "generation-v": 5,
+    "generation-vi": 6,
+    "generation-vii": 7,
+    "generation-viii": 8,
+    "generation-ix": 9,
+}
+
 # In-memory caches to prevent redundant requests across Pokémon
 _ability_cache: Dict[str, Dict[str, Any]] = {}
 _species_cache: Dict[str, Dict[str, Any]] = {}
@@ -254,7 +266,7 @@ class PokeAPIService:
             "types": types_detailed,
             "abilities": abilities_detailed,
             "sprite_url": sprite_url,
-            "generation": 1 if generation_name == "generation-i" else 1,
+            "generation": ROMAN_GEN_MAP.get(generation_name.lower(), 1),
             "genus": genus,
             "evolution_chain_url": evolution_chain_url,
             "evolution_text": evolution_text,

@@ -1,6 +1,7 @@
 import logging
 import asyncio
 from typing import Dict, Any, List, Optional
+from pymongo import UpdateOne
 from app.services.pokeapi import PokeAPIService
 from app.rag.embeddings import embed_texts
 from app.database import get_source_docs_col, get_pokemon_col, get_dex_chunks_col
@@ -64,6 +65,7 @@ def create_chunks_for_pokemon(p: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Generates granular text chunks for a Pokémon."""
     p_id = p["id"]
     p_name = p["name"]
+    p_gen = p.get("generation", 1)
     type_names = [t["name"] for t in p["types"]]
     type_str = " and ".join(type_names) if type_names else "Unknown"
     source_url = f"https://pokeapi.co/api/v2/pokemon/{p_id}"
@@ -88,7 +90,7 @@ def create_chunks_for_pokemon(p: Dict[str, Any]) -> List[Dict[str, Any]]:
         "source_id": f"pokeapi_pokemon_{p_id}",
         "pokemon_id": p_id,
         "pokemon_name": p_name,
-        "generation": 1,
+        "generation": p_gen,
         "content_type": "overview_stats",
         "language": "en",
         "version_group": "all",
@@ -106,7 +108,7 @@ def create_chunks_for_pokemon(p: Dict[str, Any]) -> List[Dict[str, Any]]:
             "source_id": f"pokeapi_pokemon_{p_id}",
             "pokemon_id": p_id,
             "pokemon_name": p_name,
-            "generation": 1,
+            "generation": p_gen,
             "content_type": "ability",
             "language": "en",
             "version_group": "all",
@@ -122,7 +124,7 @@ def create_chunks_for_pokemon(p: Dict[str, Any]) -> List[Dict[str, Any]]:
             "source_id": f"pokeapi_pokemon_{p_id}",
             "pokemon_id": p_id,
             "pokemon_name": p_name,
-            "generation": 1,
+            "generation": p_gen,
             "content_type": "evolution",
             "language": "en",
             "version_group": "all",
@@ -149,7 +151,7 @@ def create_chunks_for_pokemon(p: Dict[str, Any]) -> List[Dict[str, Any]]:
         "source_id": f"pokeapi_pokemon_{p_id}",
         "pokemon_id": p_id,
         "pokemon_name": p_name,
-        "generation": 1,
+        "generation": p_gen,
         "content_type": "type_matchup",
         "language": "en",
         "version_group": "all",
@@ -171,7 +173,7 @@ def create_chunks_for_pokemon(p: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "source_id": f"pokeapi_pokemon_{p_id}",
                 "pokemon_id": p_id,
                 "pokemon_name": p_name,
-                "generation": 1,
+                "generation": p_gen,
                 "content_type": "pokedex_entry",
                 "language": "en",
                 "version_group": version,
@@ -181,23 +183,35 @@ def create_chunks_for_pokemon(p: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     return chunks
 
-async def ingest_pokemon_range(start_id: int = 1, end_id: int = 151):
-    """Main ingestion pipeline for Generation 1 Pokémon."""
+async def ingest_pokemon_range(start_id: int = 1, end_id: int = 1025, skip_existing: bool = True):
+    """Main ingestion pipeline for Pokémon (Gen 1 through Gen 9)."""
     global ingestion_state
     if ingestion_state["is_ingesting"]:
         return {"status": "already_running"}
-
-    ingestion_state["is_ingesting"] = True
-    ingestion_state["progress"] = 0
-    ingestion_state["total"] = (end_id - start_id) + 1
-    ingestion_state["error"] = None
 
     source_col = get_source_docs_col()
     pokemon_col = get_pokemon_col()
     chunks_col = get_dex_chunks_col()
 
+    if skip_existing:
+        existing_ids = set(pokemon_col.distinct("id"))
+    else:
+        existing_ids = set()
+
+    needed_ids = [pid for pid in range(start_id, end_id + 1) if pid not in existing_ids]
+
+    ingestion_state["is_ingesting"] = True
+    ingestion_state["progress"] = 0
+    ingestion_state["total"] = len(needed_ids)
+    ingestion_state["error"] = None
+
+    if not needed_ids:
+        logger.info(f"All Pokémon in range #{start_id} to #{end_id} are already indexed.")
+        ingestion_state["is_ingesting"] = False
+        return {"status": "already_indexed", "total": 0}
+
     pokeapi = PokeAPIService()
-    semaphore = asyncio.Semaphore(10)
+    semaphore = asyncio.Semaphore(20)
 
     try:
         async def fetch_one(pid):
@@ -209,10 +223,10 @@ async def ingest_pokemon_range(start_id: int = 1, end_id: int = 151):
                     logger.error(f"Error fetching Pokémon {pid}: {ex}")
                     return None
 
-        # Fetch in batches of 15
-        batch_size = 15
-        for i in range(start_id, end_id + 1, batch_size):
-            batch_ids = list(range(i, min(i + batch_size, end_id + 1)))
+        # Fetch in concurrent batches
+        batch_size = 25
+        for i in range(0, len(needed_ids), batch_size):
+            batch_ids = needed_ids[i:i + batch_size]
             tasks = [fetch_one(pid) for pid in batch_ids]
             results = await asyncio.gather(*tasks)
 
@@ -220,10 +234,13 @@ async def ingest_pokemon_range(start_id: int = 1, end_id: int = 151):
             all_chunks = []
             chunk_texts = []
 
+            pokemon_ops = []
+            source_ops = []
+
             for p in valid_pokemon:
                 ingestion_state["current_pokemon"] = p["name"]
 
-                # 1. Save normalized Pokémon record
+                # 1. Normalized Pokémon record
                 pokemon_record = {
                     "_id": p["id"],
                     "id": p["id"],
@@ -240,17 +257,20 @@ async def ingest_pokemon_range(start_id: int = 1, end_id: int = 151):
                     "evolution_text": p["evolution_text"],
                     "evolution_chain_url": p["evolution_chain_url"]
                 }
-                pokemon_col.update_one({"_id": p["id"]}, {"$set": pokemon_record}, upsert=True)
+                pokemon_ops.append(UpdateOne({"_id": p["id"]}, {"$set": pokemon_record}, upsert=True))
 
-                # 2. Save source document record
-                source_record = {
-                    "_id": f"pokeapi_pokemon_{p['id']}",
-                    "pokemon_id": p["id"],
-                    "name": p["name"],
-                    "raw_pokemon": p["raw_pokemon"],
-                    "raw_species": p["raw_species"]
-                }
-                source_col.update_one({"_id": source_record["_id"]}, {"$set": source_record}, upsert=True)
+                # 2. Source document record (write individually to avoid large payload timeout)
+                try:
+                    source_record = {
+                        "_id": f"pokeapi_pokemon_{p['id']}",
+                        "pokemon_id": p["id"],
+                        "name": p["name"],
+                        "raw_pokemon": p["raw_pokemon"],
+                        "raw_species": p["raw_species"]
+                    }
+                    source_col.update_one({"_id": source_record["_id"]}, {"$set": source_record}, upsert=True)
+                except Exception as sex:
+                    logger.warning(f"Error saving raw source doc for #{p['id']}: {sex}")
 
                 # 3. Generate chunks
                 p_chunks = create_chunks_for_pokemon(p)
@@ -258,16 +278,24 @@ async def ingest_pokemon_range(start_id: int = 1, end_id: int = 151):
                     all_chunks.append(c)
                     chunk_texts.append(c["content"])
 
+            if pokemon_ops:
+                pokemon_col.bulk_write(pokemon_ops, ordered=False)
+
             # 4. Generate embeddings locally for chunks batch
             if chunk_texts:
-                embeddings = embed_texts(chunk_texts)
+                embeddings = embed_texts(chunk_texts, batch_size=64)
+                chunk_ops = []
                 for idx, emb in enumerate(embeddings):
                     all_chunks[idx]["embedding"] = emb
-                    chunks_col.update_one(
-                        {"_id": all_chunks[idx]["_id"]},
-                        {"$set": all_chunks[idx]},
-                        upsert=True
+                    chunk_ops.append(
+                        UpdateOne(
+                            {"_id": all_chunks[idx]["_id"]},
+                            {"$set": all_chunks[idx]},
+                            upsert=True
+                        )
                     )
+                if chunk_ops:
+                    chunks_col.bulk_write(chunk_ops, ordered=False)
 
             ingestion_state["progress"] += len(batch_ids)
             ingestion_state["stats"]["pokemon_indexed"] = pokemon_col.count_documents({})

@@ -13,7 +13,8 @@ from app.services.ingestion import ingest_pokemon_range, get_ingestion_status
 async def main():
     parser = argparse.ArgumentParser(description="Seed DexMind Pokédex data from PokéAPI into MongoDB Atlas")
     parser.add_argument("--start", type=int, default=1, help="Starting Pokémon ID (default: 1)")
-    parser.add_argument("--end", type=int, default=151, help="Ending Pokémon ID (default: 151)")
+    parser.add_argument("--end", type=int, default=1025, help="Ending Pokémon ID (default: 1025 for Gen 1–9)")
+    parser.add_argument("--force-refresh", action="store_true", help="Re-index already existing Pokémon")
     args = parser.parse_args()
 
     print("========================================")
@@ -29,10 +30,10 @@ async def main():
         sys.exit(1)
 
     print(f"✅ Connected to MongoDB Atlas database '{conn['database']}'.")
-    print(f"Starting ingestion for Pokémon #{args.start} to #{args.end}...")
+    print(f"Starting ingestion for Pokémon #{args.start} to #{args.end} (skip_existing={not args.force_refresh})...")
 
     # Start ingestion
-    task = asyncio.create_task(ingest_pokemon_range(args.start, args.end))
+    task = asyncio.create_task(ingest_pokemon_range(args.start, args.end, skip_existing=not args.force_refresh))
 
     # Monitor progress
     while not task.done():

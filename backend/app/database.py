@@ -28,9 +28,9 @@ def get_client() -> MongoClient:
             _client = MongoClient(
                 MONGODB_URI,
                 tlsCAFile=certifi.where(),
-                serverSelectionTimeoutMS=10000,
-                connectTimeoutMS=10000,
-                socketTimeoutMS=15000,
+                serverSelectionTimeoutMS=15000,
+                connectTimeoutMS=15000,
+                socketTimeoutMS=45000,
                 appname="DexMind-RAG"
             )
             # Force server selection to verify connectivity
