@@ -16,11 +16,11 @@ import {
 import { askQuestion } from '../services/api';
 
 const SUGGESTED_QUESTIONS = [
-  'Which Pokémon blast super hot fire?',
-  'Which type of pokemon can pikachu beat easily?',
-  'Compare Charizard and Blastoise.',
-  "Explain Eevee's evolution chain.",
-  'What makes Gengar special?',
+  'Who counters Charizard in battle?',
+  'Which types can Pikachu beat easily?',
+  'Compare Greninja and Lucario.',
+  'Build me a 3-Pokémon team to beat Garchomp, Charizard, and Tinkaton.',
+  "Explain Eevee's evolution branches.",
   'Who voiced Pikachu in the anime?' // Unanswerable test case
 ];
 
@@ -39,8 +39,8 @@ function FormattedMessage({ text, sources, onCitationClick }) {
           <button
             key={index}
             onClick={() => sourceObj && onCitationClick && onCitationClick(sourceObj)}
-            className="inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded text-[11px] font-mono font-bold bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-300 transition-colors cursor-pointer align-baseline"
-            title={`View evidence: ${sourceObj?.pokemon_name || 'source'}`}
+            className="inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded text-[11px] font-mono font-bold bg-yellow-400/15 hover:bg-yellow-400/30 border border-yellow-400/40 text-yellow-300 transition-colors cursor-pointer align-baseline"
+            title={`View battle lore: ${sourceObj?.pokemon_name || 'source'}`}
           >
             {citationTag}
           </button>
@@ -51,34 +51,34 @@ function FormattedMessage({ text, sources, onCitationClick }) {
   };
 
   return (
-    <div className="text-sm leading-relaxed text-zinc-100">
+    <div className="text-sm leading-relaxed text-blue-100">
       <ReactMarkdown
         components={{
           p: ({ children }) => (
-            <p className="mb-2.5 last:mb-0 leading-relaxed text-zinc-200">
+            <p className="mb-2.5 last:mb-0 leading-relaxed text-blue-100/90">
               {React.Children.map(children, renderWithCitations)}
             </p>
           ),
           li: ({ children }) => (
-            <li className="my-1.5 leading-relaxed list-disc ml-5 text-zinc-300">
+            <li className="my-1.5 leading-relaxed list-disc ml-5 text-blue-200/90">
               {React.Children.map(children, renderWithCitations)}
             </li>
           ),
           strong: ({ children }) => (
-            <strong className="font-bold text-white underline-offset-2">
+            <strong className="font-extrabold text-white">
               {children}
             </strong>
           ),
           em: ({ children }) => (
-            <em className="italic text-zinc-300">{children}</em>
+            <em className="italic text-yellow-300/90">{children}</em>
           ),
           h3: ({ children }) => (
-            <h3 className="text-sm font-mono uppercase tracking-wider text-red-400 font-bold mt-4 mb-2">
+            <h3 className="text-sm font-mono uppercase tracking-wider text-yellow-400 font-bold mt-4 mb-2">
               {children}
             </h3>
           ),
           h4: ({ children }) => (
-            <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-300 font-bold mt-3 mb-1.5">
+            <h4 className="text-xs font-mono uppercase tracking-wider text-blue-300 font-bold mt-3 mb-1.5">
               {children}
             </h4>
           ),
@@ -96,7 +96,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
     {
       id: 'welcome',
       role: 'assistant',
-      text: "Hello! I am DexMind, your RAG-powered Pokémon research intelligence platform. Ask me anything about Pokémon stats, competitive battle matchups, abilities, or evolution chains. Every response is strictly grounded with verifiable PokéAPI citations.",
+      text: "Greetings Trainer! I am DexMind, your Battle Coach and National Pokédex Intelligence. Ask me anything about Pokémon base stats, competitive battle matchups, counters, abilities, or team strategies across all 9 Generations.",
       sources: [],
       is_unanswerable: false,
     },
@@ -154,16 +154,10 @@ export default function AskDex({ onCitationClick, initialQuery }) {
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
-      const isIndexError =
-        err.type === 'AtlasIndexMissing' ||
-        err.message?.includes('dex_vector_index') ||
-        err.message?.includes('dex_text_index');
       const errorMessage = {
         id: `err-${Date.now()}`,
         role: 'assistant',
-        text: isIndexError
-          ? `⚠️ Atlas Search Index Error: ${err.message}`
-          : `⚠️ ${err.message || 'Error communicating with DexMind backend.'}`,
+        text: `⚠️ ${err.message || 'Battle Coach archives unavailable. Please check connection and try again.'}`,
         sources: [],
         is_error: true,
       };
@@ -185,7 +179,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       {
         id: 'welcome',
         role: 'assistant',
-        text: "Conversation cleared. Memory reset. Ask me anything about Pokémon stats, battle matchups, abilities, or lore.",
+        text: "Battle session reset. Memory cleared. What Pokémon matchup or team strategy would you like to explore next?",
         sources: [],
         is_unanswerable: false,
       },
@@ -210,18 +204,18 @@ export default function AskDex({ onCitationClick, initialQuery }) {
   return (
     <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-7.5rem)]">
       {/* Top Bar: Suggestions & Control */}
-      <div className="py-2 border-b border-white/[0.08] flex items-center justify-between gap-4">
+      <div className="py-2 border-b border-blue-500/20 flex items-center justify-between gap-4">
         {/* Suggested Queries */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar flex-1">
-          <span className="text-zinc-500 shrink-0 font-mono flex items-center gap-1 text-[11px]">
-            <Sparkles className="w-3 h-3 text-red-400" /> Suggestions:
+          <span className="text-blue-300 shrink-0 font-mono flex items-center gap-1.5 text-[11px] font-bold">
+            <Sparkles className="w-3 h-3 text-yellow-400" /> Suggestions:
           </span>
           {SUGGESTED_QUESTIONS.map((q, idx) => (
             <button
               key={idx}
               onClick={() => handleSend(q)}
               disabled={loading}
-              className="shrink-0 px-3 py-1 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-red-500/40 text-zinc-300 text-[11px] transition-colors cursor-pointer"
+              className="shrink-0 px-3 py-1 rounded-full bg-[#0b142b] hover:bg-[#101e3d] border border-blue-500/20 hover:border-yellow-400/40 text-blue-100 text-[11px] transition-colors cursor-pointer"
             >
               {q}
             </button>
@@ -232,11 +226,11 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         {messages.length > 1 && (
           <button
             onClick={handleClearChat}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-zinc-400 hover:text-zinc-200 text-xs font-mono transition-colors cursor-pointer shrink-0"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0b142b] hover:bg-[#101e3d] border border-blue-500/20 text-blue-300 hover:text-white text-xs font-mono transition-colors cursor-pointer shrink-0 font-semibold"
             title="Reset conversation context"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Clear Chat</span>
+            <RotateCcw className="w-3.5 h-3.5 text-yellow-400" />
+            <span className="hidden sm:inline">Reset Session</span>
           </button>
         )}
       </div>
@@ -255,9 +249,9 @@ export default function AskDex({ onCitationClick, initialQuery }) {
             >
               {/* Bot Avatar */}
               {!isUser && (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-rose-700 p-0.5 shrink-0 mt-0.5 shadow-md shadow-red-600/20">
-                  <div className="w-full h-full rounded-full bg-[#10131d] flex items-center justify-center">
-                    <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-xs animate-pulse-subtle" />
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 via-amber-500 to-blue-600 p-0.5 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20">
+                  <div className="w-full h-full rounded-full bg-[#060b19] flex items-center justify-center">
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 shadow-xs animate-pulse-subtle" />
                   </div>
                 </div>
               )}
@@ -266,17 +260,17 @@ export default function AskDex({ onCitationClick, initialQuery }) {
               <div
                 className={`max-w-[85%] rounded-2xl p-4 sm:p-5 text-sm leading-relaxed relative group ${
                   isUser
-                    ? 'bg-gradient-to-br from-red-600 to-rose-700 text-white rounded-tr-xs shadow-lg shadow-red-600/10'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-tr-xs shadow-lg shadow-blue-500/20 font-medium'
                     : m.is_error
-                    ? 'bg-red-950/30 border border-red-500/40 text-red-200 rounded-tl-xs'
-                    : 'bg-[#10131d] border border-white/[0.08] text-zinc-100 rounded-tl-xs shadow-xl'
+                    ? 'bg-red-950/40 border border-red-500/40 text-red-200 rounded-tl-xs'
+                    : 'bg-[#0b142b] border border-blue-500/20 text-slate-100 rounded-tl-xs shadow-xl'
                 }`}
               >
-                {/* Unanswerable Question Abstention Banner */}
+                {/* Out of Scope Lore Banner */}
                 {m.is_unanswerable && (
                   <div className="mb-3.5 p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-center gap-2 font-medium">
                     <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Insufficient Grounded Evidence in Indexed PokéAPI Data</span>
+                    <span>Topic Outside Game Battle Records & Pokédex Lore</span>
                   </div>
                 )}
 
@@ -293,15 +287,15 @@ export default function AskDex({ onCitationClick, initialQuery }) {
 
                 {/* Actions Footer for Bot Messages */}
                 {!isUser && !m.is_error && (
-                  <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-xs text-zinc-500">
+                  <div className="mt-3 pt-2.5 border-t border-blue-500/15 flex items-center justify-between text-xs text-blue-300">
                     <div className="flex items-center gap-2 font-mono text-[11px]">
                       {m.sources && m.sources.length > 0 && (
                         <button
                           onClick={() => toggleSourceExpand(m.id)}
-                          className="flex items-center gap-1.5 hover:text-zinc-200 transition-colors cursor-pointer text-zinc-400"
+                          className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer text-yellow-400 font-bold"
                         >
-                          <BookOpen className="w-3.5 h-3.5 text-red-400" />
-                          <span>Sources ({m.sources.length})</span>
+                          <BookOpen className="w-3.5 h-3.5" />
+                          <span>Field Records ({m.sources.length})</span>
                           {expandedSources[m.id] ? (
                             <ChevronUp className="w-3 h-3" />
                           ) : (
@@ -314,7 +308,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
                     {/* Copy Button */}
                     <button
                       onClick={() => handleCopyMessage(m.id, m.text)}
-                      className="flex items-center gap-1 hover:text-zinc-200 transition-colors cursor-pointer text-zinc-400 text-[11px] font-mono"
+                      className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-blue-300 text-[11px] font-mono"
                       title="Copy response"
                     >
                       {copiedMsgId === m.id ? (
@@ -332,36 +326,36 @@ export default function AskDex({ onCitationClick, initialQuery }) {
                   </div>
                 )}
 
-                {/* Retrieved Sources Accordion Drawer */}
+                {/* Field Records Accordion Drawer */}
                 {!isUser && m.sources && m.sources.length > 0 && expandedSources[m.id] && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-3 space-y-2 pt-2 border-t border-white/[0.06]"
+                    className="mt-3 space-y-2 pt-2 border-t border-blue-500/15"
                   >
                     {m.sources.map((src, idx) => (
                       <div
                         key={idx}
                         onClick={() => onCitationClick && onCitationClick(src)}
-                        className="bg-[#090a10] p-3 rounded-xl border border-white/[0.06] hover:border-red-500/40 cursor-pointer transition-colors"
+                        className="bg-[#060b19] p-3 rounded-xl border border-blue-500/20 hover:border-yellow-400/50 cursor-pointer transition-colors"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono font-bold text-red-400 bg-red-950/60 px-1.5 py-0.5 rounded border border-red-500/30">
+                            <span className="text-[10px] font-mono font-bold text-yellow-400 bg-yellow-400/15 px-1.5 py-0.5 rounded border border-yellow-400/30">
                               {src.citation_tag}
                             </span>
-                            <span className="font-semibold text-zinc-200 capitalize text-xs">
+                            <span className="font-bold text-white capitalize text-xs">
                               {src.pokemon_name}
                             </span>
-                            <span className="text-[10px] text-zinc-500 font-mono uppercase bg-white/[0.04] px-1.5 py-0.2 rounded">
-                              {src.content_type}
+                            <span className="text-[10px] text-blue-300 font-mono uppercase bg-blue-500/10 px-1.5 py-0.2 rounded border border-blue-500/20">
+                              {src.content_type?.replace('_', ' ')}
                             </span>
                           </div>
-                          <span className="text-[10px] text-zinc-500 font-mono">
-                            Click to inspect
+                          <span className="text-[10px] text-blue-300/70 font-mono">
+                            View details
                           </span>
                         </div>
-                        <p className="text-xs text-zinc-400 line-clamp-2 italic">
+                        <p className="text-xs text-blue-200/75 line-clamp-2 italic">
                           "{src.content}"
                         </p>
                       </div>
@@ -372,7 +366,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
 
               {/* User Avatar */}
               {isUser && (
-                <div className="w-8 h-8 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center shrink-0 mt-0.5 text-zinc-200 shadow-xs">
+                <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-400/40 flex items-center justify-center shrink-0 mt-0.5 text-blue-200 shadow-xs">
                   <User className="w-4 h-4" />
                 </div>
               )}
@@ -387,18 +381,18 @@ export default function AskDex({ onCitationClick, initialQuery }) {
             animate={{ opacity: 1, y: 0 }}
             className="flex gap-3.5 items-start"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-rose-700 p-0.5 shrink-0 mt-0.5">
-              <div className="w-full h-full rounded-full bg-[#10131d] flex items-center justify-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-blue-600 p-0.5 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20">
+              <div className="w-full h-full rounded-full bg-[#060b19] flex items-center justify-center">
+                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping" />
               </div>
             </div>
 
-            <div className="bg-[#10131d] border border-white/[0.08] rounded-2xl rounded-tl-xs p-4 text-xs font-mono text-zinc-300 flex items-center gap-3 shadow-md">
+            <div className="bg-[#0b142b] border border-blue-500/20 rounded-2xl rounded-tl-xs p-4 text-xs font-mono text-yellow-300 flex items-center gap-3 shadow-md">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-400" />
               </span>
-              <span>Vector Search & Evidence Grounding in Progress...</span>
+              <span>Consulting National Pokédex Archives...</span>
             </div>
           </motion.div>
         )}
@@ -420,26 +414,26 @@ export default function AskDex({ onCitationClick, initialQuery }) {
             type="text"
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask anything about Pokémon stats, abilities, types, or evolution chains..."
+            placeholder="Ask Battle Coach about matchups, counters, stats, or team composition across Gen 1–9..."
             disabled={loading}
-            className="w-full bg-[#10131d] border border-white/[0.1] focus:border-red-500 rounded-2xl px-5 py-3.5 pr-14 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-hidden transition-all shadow-xl"
+            className="w-full bg-[#0b142b] border border-blue-500/25 focus:border-yellow-400 rounded-2xl px-5 py-3.5 pr-14 text-sm text-white placeholder-blue-300/50 focus:outline-hidden transition-all shadow-xl"
           />
           <button
             type="submit"
             disabled={!inputQuery.trim() || loading}
             className={`absolute right-2.5 p-2 rounded-xl transition-all ${
               inputQuery.trim() && !loading
-                ? 'bg-red-600 text-white hover:bg-red-500 shadow-md shadow-red-600/30 cursor-pointer'
-                : 'text-zinc-600 cursor-not-allowed'
+                ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-300 hover:to-amber-300 text-slate-950 font-bold shadow-md shadow-yellow-400/25 cursor-pointer'
+                : 'text-blue-500/40 cursor-not-allowed'
             }`}
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-4 h-4 stroke-[2.5]" />
           </button>
         </form>
 
-        <div className="flex items-center justify-between text-[11px] text-zinc-500 mt-2 font-mono px-2">
-          <span>Context Memory Active • Last 6 Turns Retained</span>
-          <span>Verified against MongoDB Atlas PokéAPI Chunks</span>
+        <div className="flex items-center justify-between text-[11px] text-blue-300/70 mt-2 font-mono px-2">
+          <span>Trainer Memory Active • 6-Turn Tactical Retention</span>
+          <span>Official Pokémon League Battle Intelligence</span>
         </div>
       </div>
     </div>

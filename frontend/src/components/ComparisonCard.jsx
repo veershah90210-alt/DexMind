@@ -12,17 +12,18 @@ import {
   ChevronDown,
   ChevronUp,
   Crosshair,
+  Swords,
 } from 'lucide-react';
 import { getTypeStyle } from '../utils/pokemonTypes';
 
 const STAT_CONFIG = {
-  hp: { name: 'HP', icon: Heart, color: 'text-emerald-400', bg: 'bg-emerald-500' },
-  attack: { name: 'Attack', icon: Zap, color: 'text-orange-400', bg: 'bg-orange-500' },
-  defense: { name: 'Defense', icon: Shield, color: 'text-blue-400', bg: 'bg-blue-500' },
-  special_attack: { name: 'Sp. Atk', icon: Sparkles, color: 'text-red-400', bg: 'bg-red-500' },
-  special_defense: { name: 'Sp. Def', icon: Shield, color: 'text-indigo-400', bg: 'bg-indigo-500' },
-  speed: { name: 'Speed', icon: Gauge, color: 'text-amber-400', bg: 'bg-amber-500' },
-  total: { name: 'Total BST', icon: Trophy, color: 'text-purple-400', bg: 'bg-purple-500' },
+  hp: { name: 'HP', icon: Heart },
+  attack: { name: 'Attack', icon: Zap },
+  defense: { name: 'Defense', icon: Shield },
+  special_attack: { name: 'Sp. Atk', icon: Sparkles },
+  special_defense: { name: 'Sp. Def', icon: Shield },
+  speed: { name: 'Speed', icon: Gauge },
+  total: { name: 'Total BST', icon: Trophy },
 };
 
 export default function ComparisonCard({ data, onCitationClick }) {
@@ -61,8 +62,8 @@ export default function ComparisonCard({ data, onCitationClick }) {
           <button
             key={index}
             onClick={() => sourceObj && onCitationClick && onCitationClick(sourceObj)}
-            className="inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded text-[11px] font-mono font-bold bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-300 transition-colors cursor-pointer align-baseline"
-            title={`View evidence passage from ${sourceObj?.pokemon_name || 'source'}`}
+            className="inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded text-[11px] font-mono font-bold bg-yellow-400/15 hover:bg-yellow-400/30 border border-yellow-400/40 text-yellow-300 transition-colors cursor-pointer align-baseline"
+            title={`View battle lore: ${sourceObj?.pokemon_name || 'source'}`}
           >
             {citationTag}
           </button>
@@ -73,37 +74,37 @@ export default function ComparisonCard({ data, onCitationClick }) {
   };
 
   return (
-    <div className="bg-[#10131d] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-8">
+    <div className="bg-[#0b142b] border border-blue-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-8">
       {/* Head-to-Head Hero Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
         {/* Center VS Badge for Desktop */}
         <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 items-center justify-center">
-          <div className="w-11 h-11 rounded-full bg-[#151a27] border-2 border-red-500/60 flex items-center justify-center shadow-lg shadow-red-500/20 font-black text-xs text-white">
+          <div className="w-12 h-12 rounded-full bg-[#060b19] border-2 border-yellow-400 flex items-center justify-center shadow-lg shadow-yellow-400/30 font-black text-xs text-yellow-300">
             VS
           </div>
         </div>
 
         {/* Pokemon 1 Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-[#151a27]/90 border border-white/[0.08] p-6 flex flex-col items-center text-center">
+        <div className="relative overflow-hidden rounded-2xl bg-[#0d1733] border border-blue-500/20 p-6 flex flex-col items-center text-center">
           <div
             className="absolute -top-16 -left-16 w-36 h-36 rounded-full blur-2xl pointer-events-none opacity-40"
             style={{ backgroundColor: p1TypeStyle.glow }}
           />
 
-          <div className="w-28 h-28 rounded-2xl bg-[#090a10]/80 p-2 border border-white/[0.08] mb-3 flex items-center justify-center relative shadow-inner">
+          <div className="w-28 h-28 rounded-2xl bg-[#060b19] p-2 border border-blue-500/20 mb-3 flex items-center justify-center relative shadow-inner">
             <img
               src={p1.sprite_url}
               alt={p1.name}
               className="w-24 h-24 object-contain drop-shadow-md select-none"
             />
             {p1Total > p2Total && (
-              <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold font-mono flex items-center gap-1 shadow-xs">
-                <Trophy className="w-3 h-3" /> Winner
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/40 text-yellow-300 text-[10px] font-bold font-mono flex items-center gap-1 shadow-xs">
+                <Trophy className="w-3 h-3 text-yellow-400" /> Lead BST
               </span>
             )}
           </div>
 
-          <span className="text-xs font-mono font-bold text-zinc-500">
+          <span className="text-xs font-mono font-bold text-blue-300">
             #{String(p1.id).padStart(3, '0')}
           </span>
           <h3 className="text-2xl font-black text-white capitalize tracking-tight mt-0.5">
@@ -125,40 +126,40 @@ export default function ComparisonCard({ data, onCitationClick }) {
             })}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/[0.06] w-full flex justify-around text-xs font-mono text-zinc-400">
+          <div className="mt-4 pt-3 border-t border-blue-500/15 w-full flex justify-around text-xs font-mono text-blue-200">
             <div>
-              BST: <span className="font-bold text-white">{p1Total}</span>
+              BST: <span className="font-bold text-yellow-400">{p1Total}</span>
             </div>
             <div>
-              Height: <span className="font-bold text-zinc-200">{p1.height || 'N/A'}m</span>
+              Height: <span className="font-bold text-white">{p1.height || 'N/A'}m</span>
             </div>
             <div>
-              Weight: <span className="font-bold text-zinc-200">{p1.weight || 'N/A'}kg</span>
+              Weight: <span className="font-bold text-white">{p1.weight || 'N/A'}kg</span>
             </div>
           </div>
         </div>
 
         {/* Pokemon 2 Card */}
-        <div className="relative overflow-hidden rounded-2xl bg-[#151a27]/90 border border-white/[0.08] p-6 flex flex-col items-center text-center">
+        <div className="relative overflow-hidden rounded-2xl bg-[#0d1733] border border-blue-500/20 p-6 flex flex-col items-center text-center">
           <div
             className="absolute -top-16 -right-16 w-36 h-36 rounded-full blur-2xl pointer-events-none opacity-40"
             style={{ backgroundColor: p2TypeStyle.glow }}
           />
 
-          <div className="w-28 h-28 rounded-2xl bg-[#090a10]/80 p-2 border border-white/[0.08] mb-3 flex items-center justify-center relative shadow-inner">
+          <div className="w-28 h-28 rounded-2xl bg-[#060b19] p-2 border border-blue-500/20 mb-3 flex items-center justify-center relative shadow-inner">
             <img
               src={p2.sprite_url}
               alt={p2.name}
               className="w-24 h-24 object-contain drop-shadow-md select-none"
             />
             {p2Total > p1Total && (
-              <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-bold font-mono flex items-center gap-1 shadow-xs">
-                <Trophy className="w-3 h-3" /> Winner
+              <span className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/40 text-yellow-300 text-[10px] font-bold font-mono flex items-center gap-1 shadow-xs">
+                <Trophy className="w-3 h-3 text-yellow-400" /> Lead BST
               </span>
             )}
           </div>
 
-          <span className="text-xs font-mono font-bold text-zinc-500">
+          <span className="text-xs font-mono font-bold text-blue-300">
             #{String(p2.id).padStart(3, '0')}
           </span>
           <h3 className="text-2xl font-black text-white capitalize tracking-tight mt-0.5">
@@ -180,15 +181,15 @@ export default function ComparisonCard({ data, onCitationClick }) {
             })}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/[0.06] w-full flex justify-around text-xs font-mono text-zinc-400">
+          <div className="mt-4 pt-3 border-t border-blue-500/15 w-full flex justify-around text-xs font-mono text-blue-200">
             <div>
-              BST: <span className="font-bold text-white">{p2Total}</span>
+              BST: <span className="font-bold text-yellow-400">{p2Total}</span>
             </div>
             <div>
-              Height: <span className="font-bold text-zinc-200">{p2.height || 'N/A'}m</span>
+              Height: <span className="font-bold text-white">{p2.height || 'N/A'}m</span>
             </div>
             <div>
-              Weight: <span className="font-bold text-zinc-200">{p2.weight || 'N/A'}kg</span>
+              Weight: <span className="font-bold text-white">{p2.weight || 'N/A'}kg</span>
             </div>
           </div>
         </div>
@@ -196,103 +197,75 @@ export default function ComparisonCard({ data, onCitationClick }) {
 
       {/* Numerical Base Stats Comparison Breakdown */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
-          <h4 className="text-xs font-mono uppercase tracking-wider text-zinc-400 font-bold flex items-center gap-2">
-            <Crosshair className="w-4 h-4 text-red-400" />
+        <div className="flex items-center justify-between border-b border-blue-500/15 pb-2">
+          <h4 className="text-xs font-mono uppercase tracking-wider text-blue-300 font-bold flex items-center gap-2">
+            <Crosshair className="w-4 h-4 text-yellow-400" />
             Base Stats Comparison Matrix
           </h4>
-          <span className="text-[11px] font-mono text-zinc-500">
-            {p1.name} (Left) vs {p2.name} (Right)
+          <span className="text-[11px] font-mono text-blue-300/70">
+            Official Pokémon Base Stats
           </span>
         </div>
 
         <div className="space-y-2">
-          {Object.entries(stat_comparison || {}).map(([key, stat]) => {
-            const config = STAT_CONFIG[key] || {
-              name: key,
-              icon: Zap,
-              color: 'text-zinc-400',
-              bg: 'bg-zinc-600',
-            };
-            const Icon = config.icon;
-
-            const p1Val = stat.p1_val ?? 0;
-            const p2Val = stat.p2_val ?? 0;
-            const diff = stat.diff ?? 0;
+          {stat_comparison && Object.entries(stat_comparison).map(([statKey, comp]) => {
+            const config = STAT_CONFIG[statKey] || { name: statKey };
+            const p1Val = comp.pokemon1;
+            const p2Val = comp.pokemon2;
+            const diff = comp.diff;
             const p1Wins = diff > 0;
             const p2Wins = diff < 0;
 
-            const maxRef = key === 'total' ? 800 : 255;
+            const maxRef = statKey === 'total' ? 800 : 255;
             const p1Pct = Math.min(Math.round((p1Val / maxRef) * 100), 100);
             const p2Pct = Math.min(Math.round((p2Val / maxRef) * 100), 100);
 
             return (
               <div
-                key={key}
-                className="bg-[#090a10] p-3.5 rounded-xl border border-white/[0.06] flex flex-col gap-2"
+                key={statKey}
+                className="bg-[#060b19] border border-blue-500/15 rounded-xl p-3 flex flex-col gap-1.5"
               >
                 <div className="flex items-center justify-between text-xs font-mono">
-                  {/* Left (P1) Stat */}
-                  <div className="flex items-center gap-2 w-28">
-                    <span
-                      className={`text-sm font-bold ${
-                        p1Wins ? 'text-emerald-400 font-black' : 'text-zinc-400'
-                      }`}
-                    >
-                      {p1Val}
-                    </span>
-                    {p1Wins && (
-                      <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-1 py-0.2 rounded border border-emerald-500/30">
-                        +{diff}
+                  <span className={`w-12 font-bold ${p1Wins ? 'text-yellow-400' : 'text-slate-300'}`}>
+                    {p1Val}
+                  </span>
+                  <span className="text-blue-300 font-bold uppercase text-[11px] flex items-center gap-1.5">
+                    {config.name}
+                    {diff !== 0 && (
+                      <span className={`text-[10px] px-1 py-0.2 rounded font-mono font-bold ${
+                        p1Wins ? 'text-yellow-400 bg-yellow-400/10' : 'text-blue-400 bg-blue-500/10'
+                      }`}>
+                        {diff > 0 ? `+${diff} (${p1.name})` : `${diff} (${p2.name})`}
                       </span>
                     )}
-                  </div>
-
-                  {/* Stat Center Label */}
-                  <div className="flex items-center justify-center gap-1.5 font-semibold text-zinc-200">
-                    <Icon className={`w-3.5 h-3.5 ${config.color}`} />
-                    <span>{config.name}</span>
-                  </div>
-
-                  {/* Right (P2) Stat */}
-                  <div className="flex items-center justify-end gap-2 w-28">
-                    {p2Wins && (
-                      <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-1 py-0.2 rounded border border-emerald-500/30">
-                        +{Math.abs(diff)}
-                      </span>
-                    )}
-                    <span
-                      className={`text-sm font-bold ${
-                        p2Wins ? 'text-emerald-400 font-black' : 'text-zinc-400'
-                      }`}
-                    >
-                      {p2Val}
-                    </span>
-                  </div>
+                  </span>
+                  <span className={`w-12 text-right font-bold ${p2Wins ? 'text-blue-400' : 'text-slate-300'}`}>
+                    {p2Val}
+                  </span>
                 </div>
 
-                {/* Dual Visual Comparative Progress Bar */}
-                <div className="grid grid-cols-2 gap-2 h-2 rounded-full overflow-hidden bg-white/[0.04] p-0.5">
-                  {/* P1 bar (fills from right to left) */}
-                  <div className="flex justify-end">
+                {/* Comparative Double Progress Bar */}
+                <div className="grid grid-cols-2 gap-2 h-2">
+                  {/* P1 Bar (flows right to left) */}
+                  <div className="bg-blue-950/50 rounded-full h-full overflow-hidden flex justify-end">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${p1Pct}%` }}
                       transition={{ duration: 0.5, ease: 'easeOut' }}
                       className={`h-full rounded-full ${
-                        p1Wins ? 'bg-gradient-to-l from-emerald-500 to-teal-400' : 'bg-zinc-600'
+                        p1Wins ? 'bg-gradient-to-l from-yellow-400 to-amber-500' : 'bg-slate-600'
                       }`}
                     />
                   </div>
 
-                  {/* P2 bar (fills from left to right) */}
-                  <div className="flex justify-start">
+                  {/* P2 Bar (flows left to right) */}
+                  <div className="bg-blue-950/50 rounded-full h-full overflow-hidden flex justify-start">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${p2Pct}%` }}
                       transition={{ duration: 0.5, ease: 'easeOut' }}
                       className={`h-full rounded-full ${
-                        p2Wins ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-zinc-600'
+                        p2Wins ? 'bg-gradient-to-r from-blue-500 to-blue-400' : 'bg-slate-600'
                       }`}
                     />
                   </div>
@@ -303,39 +276,39 @@ export default function ComparisonCard({ data, onCitationClick }) {
         </div>
       </div>
 
-      {/* RAG Synthesis Narrative */}
+      {/* Battle Strategist Analysis Narrative */}
       {analysis && (
-        <div className="bg-[#090a10] border border-white/[0.08] rounded-2xl p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-            <h4 className="text-xs font-mono uppercase tracking-wider text-red-400 font-bold flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Retrieval-Grounded Matchup Synthesis
+        <div className="bg-[#060b19] border border-blue-500/20 rounded-2xl p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-blue-500/15 pb-3">
+            <h4 className="text-xs font-mono uppercase tracking-wider text-yellow-400 font-bold flex items-center gap-2">
+              <Swords className="w-4 h-4 text-yellow-400" />
+              Tactical Battle Strategist Analysis
             </h4>
-            <span className="text-[11px] font-mono text-zinc-500">
-              Gemini + PokéAPI Grounding
+            <span className="text-[11px] font-mono text-blue-300">
+              Official League Battle Simulation
             </span>
           </div>
 
-          <div className="text-sm leading-relaxed text-zinc-200">
+          <div className="text-sm leading-relaxed text-blue-100">
             <ReactMarkdown
               components={{
                 p: ({ children }) => (
-                  <p className="mb-2 last:mb-0 leading-relaxed">
+                  <p className="mb-2 last:mb-0 leading-relaxed text-blue-100/90">
                     {React.Children.map(children, renderWithCitations)}
                   </p>
                 ),
                 li: ({ children }) => (
-                  <li className="my-1.5 leading-relaxed list-disc ml-5 text-zinc-300">
+                  <li className="my-1.5 leading-relaxed list-disc ml-5 text-blue-200/90">
                     {React.Children.map(children, renderWithCitations)}
                   </li>
                 ),
                 strong: ({ children }) => (
-                  <strong className="font-bold text-white underline-offset-2">
+                  <strong className="font-extrabold text-white">
                     {children}
                   </strong>
                 ),
                 em: ({ children }) => (
-                  <em className="italic text-zinc-300">{children}</em>
+                  <em className="italic text-yellow-300/90">{children}</em>
                 ),
                 ul: ({ children }) => (
                   <ul className="space-y-1 my-2">{children}</ul>
@@ -348,14 +321,14 @@ export default function ComparisonCard({ data, onCitationClick }) {
 
           {/* Collapsible Source Evidence */}
           {sources && sources.length > 0 && (
-            <div className="pt-3 border-t border-white/[0.06]">
+            <div className="pt-3 border-t border-blue-500/15">
               <button
                 onClick={() => setSourcesOpen(!sourcesOpen)}
-                className="flex items-center justify-between w-full text-xs text-zinc-400 hover:text-zinc-200 font-mono py-1 transition-colors cursor-pointer"
+                className="flex items-center justify-between w-full text-xs text-yellow-400 hover:text-yellow-300 font-mono py-1 transition-colors cursor-pointer font-bold"
               >
                 <span className="flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-red-400" />
-                  Grounded Evidence ({sources.length} retrieved chunks)
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Verified Battle Records ({sources.length} field lore citations)
                 </span>
                 {sourcesOpen ? (
                   <ChevronUp className="w-3.5 h-3.5" />
@@ -370,25 +343,25 @@ export default function ComparisonCard({ data, onCitationClick }) {
                     <div
                       key={idx}
                       onClick={() => onCitationClick && onCitationClick(src)}
-                      className="bg-[#10131d] p-3 rounded-xl border border-white/[0.06] hover:border-red-500/40 cursor-pointer transition-colors"
+                      className="bg-[#0b142b] p-3 rounded-xl border border-blue-500/20 hover:border-yellow-400/50 cursor-pointer transition-colors"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono font-bold text-red-400 bg-red-950/60 px-1.5 py-0.5 rounded border border-red-500/30">
+                          <span className="text-[10px] font-mono font-bold text-yellow-400 bg-yellow-400/15 px-1.5 py-0.5 rounded border border-yellow-400/30">
                             {src.citation_tag}
                           </span>
-                          <span className="font-semibold text-zinc-200 capitalize text-xs">
+                          <span className="font-bold text-white capitalize text-xs">
                             {src.pokemon_name}
                           </span>
-                          <span className="text-[10px] text-zinc-500 font-mono uppercase bg-white/[0.04] px-1.5 py-0.2 rounded">
-                            {src.content_type}
+                          <span className="text-[10px] text-blue-300 font-mono uppercase bg-blue-500/10 px-1.5 py-0.2 rounded border border-blue-500/20">
+                            {src.content_type?.replace('_', ' ')}
                           </span>
                         </div>
-                        <span className="text-[10px] text-zinc-500 font-mono">
+                        <span className="text-[10px] text-blue-300/70 font-mono">
                           Inspect passage
                         </span>
                       </div>
-                      <p className="text-xs text-zinc-400 line-clamp-2 italic">
+                      <p className="text-xs text-blue-200/75 line-clamp-2 italic">
                         "{src.content}"
                       </p>
                     </div>

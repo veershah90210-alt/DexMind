@@ -37,7 +37,7 @@ export default function CitationPanel({ source, onClose }) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="fixed inset-0 bg-black/80 backdrop-blur-md"
+          className="fixed inset-0 bg-[#060b19]/80 backdrop-blur-md"
         />
 
         {/* Modal Dialog */}
@@ -47,26 +47,26 @@ export default function CitationPanel({ source, onClose }) {
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
           transition={{ type: 'spring', stiffness: 450, damping: 30 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-xl bg-[#10131d] border border-white/[0.12] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
+          className="relative w-full max-w-xl bg-[#0b142b] border border-blue-500/25 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] z-10"
         >
           {/* Header */}
-          <div className="bg-[#151a27] px-6 py-4 border-b border-white/[0.08] flex items-center justify-between">
+          <div className="bg-[#0f1d38] px-6 py-4 border-b border-blue-500/20 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="bg-red-500/15 text-red-400 border border-red-500/30 text-xs font-mono font-bold px-2.5 py-1 rounded-md">
+              <span className="bg-yellow-400/15 text-yellow-300 border border-yellow-400/40 text-xs font-mono font-bold px-2.5 py-1 rounded-md">
                 {source.citation_tag || 'SOURCE'}
               </span>
               <div>
                 <h2 className="text-base font-bold text-white capitalize leading-tight">
-                  {source.pokemon_name} Evidence Record
+                  {source.pokemon_name} Battle Record
                 </h2>
-                <span className="text-[11px] font-mono text-zinc-400">
-                  PokéAPI Canonical Document
+                <span className="text-[11px] font-mono text-blue-300">
+                  Official Field Research Document
                 </span>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
+              className="text-blue-300 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
               title="Close (Esc)"
             >
               <X className="w-5 h-5" />
@@ -76,37 +76,37 @@ export default function CitationPanel({ source, onClose }) {
           {/* Modal Body */}
           <div className="p-6 overflow-y-auto space-y-5 text-sm">
             {/* Metadata Badges */}
-            <div className="grid grid-cols-2 gap-3 bg-[#0a0c13] p-4 rounded-xl border border-white/[0.06]">
+            <div className="grid grid-cols-2 gap-3 bg-[#060b19] p-4 rounded-xl border border-blue-500/15">
               <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block mb-1">
-                  Content Type
+                <span className="text-[10px] font-mono text-blue-300 uppercase tracking-wider block mb-1 font-bold">
+                  Record Category
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-zinc-300 font-mono text-xs">
-                  <Bookmark className="w-3.5 h-3.5 text-red-400" />
-                  {source.content_type || 'General'}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-200 font-mono text-xs">
+                  <Bookmark className="w-3.5 h-3.5 text-yellow-400" />
+                  {source.content_type?.replace('_', ' ') || 'General Lore'}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider block mb-1">
-                  Canon Source Group
+                <span className="text-[10px] font-mono text-blue-300 uppercase tracking-wider block mb-1 font-bold">
+                  Canon Source
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.08] text-zinc-300 font-mono text-xs capitalize">
-                  <Info className="w-3.5 h-3.5 text-cyan-400" />
-                  {source.version_group || 'Generation 1 Kanto'}
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-200 font-mono text-xs capitalize">
+                  <Info className="w-3.5 h-3.5 text-blue-400" />
+                  {source.version_group || 'National Pokédex Archives'}
                 </span>
               </div>
             </div>
 
             {/* Exact Evidence Passage */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
-                <span className="flex items-center gap-1.5 text-zinc-300 font-semibold">
-                  <FileText className="w-3.5 h-3.5 text-red-400" />
-                  Exact Retrieved Grounding Chunk:
+              <div className="flex items-center justify-between text-xs font-mono text-blue-200">
+                <span className="flex items-center gap-1.5 text-white font-bold">
+                  <FileText className="w-3.5 h-3.5 text-yellow-400" />
+                  Exact Field Research Citation:
                 </span>
                 <button
                   onClick={handleCopy}
-                  className="flex items-center gap-1 text-[11px] hover:text-white text-zinc-400 transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] hover:text-white text-blue-300 transition-colors cursor-pointer"
                 >
                   {copied ? (
                     <>
@@ -116,30 +116,30 @@ export default function CitationPanel({ source, onClose }) {
                   ) : (
                     <>
                       <Copy className="w-3 h-3" />
-                      <span>Copy chunk</span>
+                      <span>Copy Citation</span>
                     </>
                   )}
                 </button>
               </div>
 
-              <div className="relative bg-[#090a10] p-4 rounded-xl border-l-2 border-l-red-500 border border-white/[0.06] text-zinc-200 leading-relaxed font-sans text-sm selection:bg-red-500/30">
+              <div className="relative bg-[#060b19] p-4 rounded-xl border-l-2 border-l-yellow-400 border border-blue-500/15 text-blue-100 leading-relaxed font-sans text-sm selection:bg-yellow-400/20">
                 "{source.content}"
               </div>
             </div>
 
             {/* Source Reference Link */}
             {source.source_url && (
-              <div className="pt-3 flex items-center justify-between text-xs text-zinc-500 border-t border-white/[0.06]">
-                <span className="truncate max-w-xs font-mono text-[11px] text-zinc-400">
+              <div className="pt-3 flex items-center justify-between text-xs text-blue-300/70 border-t border-blue-500/15">
+                <span className="truncate max-w-xs font-mono text-[11px] text-blue-300">
                   {source.source_url}
                 </span>
                 <a
                   href={source.source_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-red-400 hover:text-red-300 font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 text-yellow-400 hover:text-yellow-300 font-bold transition-colors"
                 >
-                  Inspect PokéAPI
+                  Inspect Reference
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
@@ -147,13 +147,13 @@ export default function CitationPanel({ source, onClose }) {
           </div>
 
           {/* Footer */}
-          <div className="bg-[#151a27] px-6 py-3 border-t border-white/[0.08] flex items-center justify-between">
-            <span className="text-[11px] font-mono text-zinc-500">
-              Atlas Vector Search Grounding
+          <div className="bg-[#0f1d38] px-6 py-3 border-t border-blue-500/20 flex items-center justify-between">
+            <span className="text-[11px] font-mono text-blue-300 font-medium">
+              Official Pokémon League Field Lore
             </span>
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200 text-xs font-semibold transition-colors cursor-pointer"
+              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer"
             >
               Close
             </button>

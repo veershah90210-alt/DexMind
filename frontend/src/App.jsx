@@ -19,7 +19,7 @@ export default function App() {
       const data = await fetchHealth();
       setHealthInfo(data);
     } catch (err) {
-      console.warn('Backend or database offline:', err);
+      console.warn('Network offline:', err);
       setHealthInfo({
         status: 'disconnected',
         mongodb: { connected: false, error: err.message },
@@ -52,7 +52,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090a10] text-zinc-100 flex flex-col font-sans selection:bg-red-500/25 selection:text-red-200">
+    <div className="min-h-screen bg-[#060b19] text-slate-100 flex flex-col font-sans selection:bg-yellow-400/30 selection:text-yellow-200 bg-grid-pattern">
       {/* Top Floating / Blurred Navigation */}
       <Navbar
         activeTab={activeTab}
@@ -105,21 +105,21 @@ export default function App() {
         onClose={() => setActiveCitation(null)}
       />
 
-      {/* Minimal Tech Stack Footer */}
-      <footer className="border-t border-white/[0.06] py-5 mt-auto bg-[#090a10]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 font-mono">
+      {/* Official League Footer */}
+      <footer className="border-t border-blue-500/15 py-6 mt-auto bg-[#060b19]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-300/70 font-mono">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-500/80" />
-            <span className="text-zinc-400 font-bold">DexMind</span>
-            <span>— Canonical Retrieval-Augmented Generation Platform</span>
+            <span className="w-2 h-2 rounded-full bg-yellow-400 shadow-xs shadow-yellow-400" />
+            <span className="text-white font-bold">DexMind</span>
+            <span>— The Definitive National Pokédex & Battle Intelligence Platform</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <span>MongoDB Atlas Vector Search</span>
+          <div className="flex items-center gap-3 text-[11px] text-blue-400/60 flex-wrap justify-center">
+            <span>Gen 1 through Gen 9</span>
             <span>•</span>
-            <span>all-MiniLM-L6-v2 (384-d)</span>
+            <span>1,025 Pokémon Registered</span>
             <span>•</span>
-            <span>Gemini API</span>
+            <span>Pokémon © Nintendo / Creatures Inc. / GAME FREAK inc.</span>
           </div>
         </div>
       </footer>
