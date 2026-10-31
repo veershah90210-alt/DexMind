@@ -1,20 +1,3 @@
-<<<<<<< HEAD
-# ⚡ DexMind
-
-<div align="center">
-  <h3>An Intelligent, RAG-Powered Pokémon Discovery & Battle Intelligence System</h3>
-  <p>
-    Built by <strong>Team 404NotFound</strong> for <strong>Nexus Uncharted Hackathon 2026</strong>
-  </p>
-  <p>
-    <strong>React 19</strong> • <strong>FastAPI</strong> • <strong>MongoDB Atlas Vector Search</strong> • <strong>Gemini API</strong> • <strong>PokéAPI</strong>
-  </p>
-</div>
-
----
-
-DexMind is an AI-powered Pokémon research engine and tactical companion built on a hybrid **Retrieval-Augmented Generation (RAG)** architecture. Moving beyond static wikis and generic LLM hallucinations, DexMind synthesizes canonical game records across Generations 1 through 9 to deliver factual, battle-tested insights backed by clickable evidence citations.
-=======
 # ⚡ DexMind — An Intelligent Pokémon Discovery & Battle Intelligence Platform
 
 <div align="center">
