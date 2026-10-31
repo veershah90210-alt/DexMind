@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUpDown, AlertCircle, RefreshCw, Sparkles, Swords } from 'lucide-react';
+import { ArrowUpDown, AlertCircle, RefreshCw, Sparkles, Swords, Zap } from 'lucide-react';
 import { comparePokemon, fetchPokemonList } from '../services/api';
 import ComparisonCard from '../components/ComparisonCard';
 
 const COMPARISON_PRESETS = [
-  { p1: 'Charizard', p2: 'Blastoise' },
-  { p1: 'Lucario', p2: 'Greninja' },
-  { p1: 'Garchomp', p2: 'Dragonite' },
-  { p1: 'Tinkaton', p2: 'Gengar' },
-  { p1: 'Pikachu', p2: 'Raichu' },
+  { p1: 'Charizard', p2: 'Blastoise', label: 'Gen 1 Kanto Icons' },
+  { p1: 'Lucario', p2: 'Greninja', label: 'Fan Favorites' },
+  { p1: 'Garchomp', p2: 'Dragonite', label: 'Dragon Titans' },
+  { p1: 'Mewtwo', p2: 'Mew', label: 'Legendary Clash' },
+  { p1: 'Kyogre', p2: 'Groudon', label: 'Ancient Weather Gods' },
+  { p1: 'Miraidon', p2: 'Koraidon', label: 'Paldean Paradox' },
 ];
 
 export default function ComparePage({ compareSelection, onCitationClick }) {
@@ -70,55 +71,60 @@ export default function ComparePage({ compareSelection, onCitationClick }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-2 space-y-8">
-      {/* Selector Box */}
-      <div className="bg-[#0b142b] border border-blue-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        {/* Glow accent */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+    <div className="w-full max-w-[1720px] mx-auto py-1 space-y-4">
+      {/* Pokédex Arena Staging Control Center */}
+      <div className="bg-[#1e293b] border-2 border-[#334155] border-t-4 border-t-[#dc2626] p-4 sm:p-5 relative overflow-hidden shadow-md">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-[#334155]">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-yellow-400/15 border border-yellow-400/30 text-yellow-300 text-xs font-mono font-bold mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-yellow-400" />
-              Official League Matchup Simulator
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-yellow-400 text-slate-950 font-black text-xs font-mono mb-2 border border-yellow-300 uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+              Pokédex Matchup Arena
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <Swords className="w-6 h-6 text-yellow-400" />
-              <span>Head-to-Head Battle Lab</span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5 font-sans">
+              <Swords className="w-6 h-6 text-yellow-400 stroke-[2.5]" />
+              <span>Head-to-Head Battle Simulator</span>
             </h2>
-            <p className="text-xs text-blue-200/80 mt-1 max-w-lg">
-              Simulate head-to-head tactical matchups between any two Pokémon across all 9 Generations with stat differential analysis, type coverage calculations, and battle coach verdicts.
+            <p className="text-sm sm:text-base text-slate-200 mt-1.5 max-w-2xl leading-relaxed">
+              Compare any two Pokémon across all 9 Generations with side-by-side base statistics, stat differential advantages, type coverage analysis, and battle verdicts.
             </p>
           </div>
 
-          {/* Preset Buttons */}
-          <div className="flex flex-wrap gap-1.5 items-center">
-            <span className="text-[10px] font-mono text-blue-300 uppercase font-bold">Presets:</span>
-            {COMPARISON_PRESETS.slice(0, 3).map((preset, idx) => (
-              <button
-                key={idx}
-                onClick={() => handlePresetClick(preset)}
-                className="px-2.5 py-1 rounded-lg bg-[#060b19] hover:bg-[#162850] border border-blue-500/20 text-[11px] font-mono text-blue-200 hover:text-white transition-colors cursor-pointer font-semibold"
-              >
-                {preset.p1} vs {preset.p2}
-              </button>
-            ))}
+          {/* Quick Rivalry Presets */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+            <span className="text-xs font-mono text-amber-400 uppercase font-bold tracking-wider shrink-0">
+              Classic Rivalries:
+            </span>
+            <div className="flex flex-wrap gap-2 items-center">
+              {COMPARISON_PRESETS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handlePresetClick(preset)}
+                  className="px-3 py-1.5 bg-[#0f172a] hover:bg-[#334155] border border-[#475569] hover:border-yellow-400 text-xs font-mono text-slate-200 hover:text-white transition-colors cursor-pointer font-bold"
+                >
+                  {preset.p1} <span className="text-yellow-400 font-black">VS</span> {preset.p2}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Input Controls */}
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
-          {/* Pokemon 1 Selector */}
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-mono text-blue-300 mb-1.5 font-bold">
-              First Combatant
-            </label>
+        {/* Input Combatants Control Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          {/* Combatant 1 Selector (Red Corner) */}
+          <div className="md:col-span-2 bg-[#0f172a] p-4 border-2 border-red-500/60 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs sm:text-sm font-mono text-red-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-red-500 inline-block" />
+                Red Corner (Combatant 1)
+              </label>
+              <span className="text-xs font-mono text-slate-400">Searchable</span>
+            </div>
             <input
               list="pokemon-list-1"
               value={p1Name}
               onChange={(e) => setP1Name(e.target.value)}
               placeholder="e.g. Charizard"
-              className="w-full bg-[#060b19] border border-blue-500/25 focus:border-yellow-400 rounded-xl px-4 py-3 text-sm text-white capitalize font-semibold placeholder-blue-300/40 focus:outline-hidden transition-all shadow-inner"
+              className="w-full bg-[#1e293b] border-2 border-[#475569] focus:border-red-400 px-3.5 py-2.5 text-sm sm:text-base text-white capitalize font-bold placeholder-slate-400 focus:outline-hidden transition-colors"
             />
             <datalist id="pokemon-list-1">
               {allPokemon.map((p) => (
@@ -127,29 +133,36 @@ export default function ComparePage({ compareSelection, onCitationClick }) {
             </datalist>
           </div>
 
-          {/* Swap Button */}
-          <div className="text-center sm:col-span-1 flex justify-center pb-1">
+          {/* Swap Combatants Center Button */}
+          <div className="text-center md:col-span-1 flex flex-col items-center justify-center gap-1.5 pb-2">
             <button
               type="button"
               onClick={handleSwap}
-              className="w-10 h-10 rounded-full bg-[#060b19] hover:bg-[#162850] border border-blue-500/30 flex items-center justify-center text-yellow-400 hover:text-yellow-300 transition-all cursor-pointer shadow-xs"
-              title="Swap Pokémon"
+              className="w-11 h-11 bg-[#0f172a] hover:bg-yellow-400 text-yellow-400 hover:text-slate-950 border-2 border-[#475569] hover:border-yellow-400 flex items-center justify-center transition-colors cursor-pointer shadow-sm"
+              title="Swap Pokémon Corners"
             >
-              <ArrowUpDown className="w-4 h-4 stroke-[2.5]" />
+              <ArrowUpDown className="w-5 h-5 stroke-[2.5]" />
             </button>
+            <span className="text-[10px] font-mono font-bold uppercase text-slate-300 tracking-wider">
+              Swap Corners
+            </span>
           </div>
 
-          {/* Pokemon 2 Selector */}
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-mono text-blue-300 mb-1.5 font-bold">
-              Opponent Pokémon
-            </label>
+          {/* Combatant 2 Selector (Blue Corner) */}
+          <div className="md:col-span-2 bg-[#0f172a] p-4 border-2 border-blue-500/60 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs sm:text-sm font-mono text-sky-400 font-bold uppercase tracking-wider flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-sky-500 inline-block" />
+                Blue Corner (Combatant 2)
+              </label>
+              <span className="text-xs font-mono text-slate-400">Searchable</span>
+            </div>
             <input
               list="pokemon-list-2"
               value={p2Name}
               onChange={(e) => setP2Name(e.target.value)}
               placeholder="e.g. Blastoise"
-              className="w-full bg-[#060b19] border border-blue-500/25 focus:border-yellow-400 rounded-xl px-4 py-3 text-sm text-white capitalize font-semibold placeholder-blue-300/40 focus:outline-hidden transition-all shadow-inner"
+              className="w-full bg-[#1e293b] border-2 border-[#475569] focus:border-sky-400 px-3.5 py-2.5 text-sm sm:text-base text-white capitalize font-bold placeholder-slate-400 focus:outline-hidden transition-colors"
             />
             <datalist id="pokemon-list-2">
               {allPokemon.map((p) => (
@@ -164,10 +177,10 @@ export default function ComparePage({ compareSelection, onCitationClick }) {
           <button
             onClick={() => executeComparison()}
             disabled={loading || !p1Name.trim() || !p2Name.trim()}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all cursor-pointer ${
+            className={`flex items-center gap-2.5 px-7 py-3 font-black text-xs sm:text-sm uppercase tracking-wider transition-colors cursor-pointer border-2 ${
               loading || !p1Name.trim() || !p2Name.trim()
-                ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-300 hover:to-amber-300 text-slate-950 font-black shadow-lg shadow-yellow-400/25'
+                ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
+                : 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 border-yellow-300 shadow-sm'
             }`}
           >
             {loading ? (
@@ -186,9 +199,9 @@ export default function ComparePage({ compareSelection, onCitationClick }) {
 
         {/* Error Alert */}
         {error && (
-          <div className="mt-4 p-4 rounded-xl bg-red-950/40 border border-red-500/40 text-red-200 text-xs flex items-center gap-2.5">
+          <div className="mt-4 p-3 bg-red-950/50 border-2 border-red-500 text-red-200 text-xs flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
-            <span>{error}</span>
+            <span className="font-semibold">{error}</span>
           </div>
         )}
       </div>

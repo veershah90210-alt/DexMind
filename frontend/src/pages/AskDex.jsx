@@ -5,13 +5,12 @@ import {
   Send,
   User,
   Sparkles,
-  BookOpen,
   AlertTriangle,
-  ChevronDown,
-  ChevronUp,
   Copy,
   Check,
   RotateCcw,
+  ExternalLink,
+  FileText,
 } from 'lucide-react';
 import { askQuestion } from '../services/api';
 import PokeBall from '../components/PokeBall';
@@ -22,71 +21,59 @@ const SUGGESTED_QUESTIONS = [
   'Compare Greninja and Lucario.',
   'Build me a 3-Pokémon team to beat Garchomp, Charizard, and Tinkaton.',
   "Explain Eevee's evolution branches.",
-  'Who voiced Pikachu in the anime?' // Unanswerable test case
+  'What are the strongest Dragon-type Pokémon in Paldea?',
 ];
 
-function FormattedMessage({ text, sources, onCitationClick }) {
+function formatContentType(type) {
+  if (!type) return 'Field Record';
+  return type
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function FormattedMessage({ text }) {
   if (!text) return null;
 
-  const renderWithCitations = (children) => {
-    if (typeof children !== 'string') return children;
-    const parts = children.split(/(\[S\d+\])/g);
-    return parts.map((part, index) => {
-      const match = part.match(/\[S(\d+)\]/);
-      if (match) {
-        const citationTag = part;
-        const sourceObj = sources?.find((s) => s.citation_tag === citationTag);
-        return (
-          <button
-            key={index}
-            onClick={() => sourceObj && onCitationClick && onCitationClick(sourceObj)}
-            className="inline-flex items-center px-1.5 py-0.2 mx-0.5 rounded text-[11px] font-mono font-bold bg-yellow-400/15 hover:bg-yellow-400/30 border border-yellow-400/40 text-yellow-300 transition-colors cursor-pointer align-baseline"
-            title={`View battle lore: ${sourceObj?.pokemon_name || 'source'}`}
-          >
-            {citationTag}
-          </button>
-        );
-      }
-      return part;
-    });
-  };
+  // Intelligently strip raw [S1], [S2] citation markers from the rendered prose
+  const cleanedText = text.replace(/\s*\[S\d+\]/g, '');
 
   return (
-    <div className="text-sm leading-relaxed text-blue-100">
+    <div className="text-sm sm:text-base leading-relaxed text-slate-100 font-sans">
       <ReactMarkdown
         components={{
           p: ({ children }) => (
-            <p className="mb-2.5 last:mb-0 leading-relaxed text-blue-100/90">
-              {React.Children.map(children, renderWithCitations)}
+            <p className="mb-3 last:mb-0 leading-relaxed text-slate-200">
+              {children}
             </p>
           ),
           li: ({ children }) => (
-            <li className="my-1.5 leading-relaxed list-disc ml-5 text-blue-200/90">
-              {React.Children.map(children, renderWithCitations)}
+            <li className="my-1.5 leading-relaxed list-disc ml-5 text-slate-300">
+              {children}
             </li>
           ),
           strong: ({ children }) => (
-            <strong className="font-extrabold text-white">
+            <strong className="font-bold text-yellow-300">
               {children}
             </strong>
           ),
           em: ({ children }) => (
-            <em className="italic text-yellow-300/90">{children}</em>
+            <em className="italic text-yellow-200">{children}</em>
           ),
           h3: ({ children }) => (
-            <h3 className="text-sm font-mono uppercase tracking-wider text-yellow-400 font-bold mt-4 mb-2">
+            <h3 className="text-sm sm:text-base font-bold uppercase tracking-wider text-amber-400 mt-4 mb-2">
               {children}
             </h3>
           ),
           h4: ({ children }) => (
-            <h4 className="text-xs font-mono uppercase tracking-wider text-blue-300 font-bold mt-3 mb-1.5">
+            <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-200 mt-3 mb-1.5">
               {children}
             </h4>
           ),
-          ul: ({ children }) => <ul className="space-y-1 my-2">{children}</ul>,
+          ul: ({ children }) => <ul className="space-y-1.5 my-2.5">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal ml-5 space-y-1.5 my-2.5">{children}</ol>,
         }}
       >
-        {text}
+        {cleanedText}
       </ReactMarkdown>
     </div>
   );
@@ -97,14 +84,13 @@ export default function AskDex({ onCitationClick, initialQuery }) {
     {
       id: 'welcome',
       role: 'assistant',
-      text: "Greetings Trainer! I am DexMind, your Battle Coach and National Pokédex Intelligence. Ask me anything about Pokémon base stats, competitive battle matchups, counters, abilities, or team strategies across all 9 Generations.",
+      text: "Greetings Trainer. I am DexMind, your Battle Strategist and National Pokédex Intelligence. Inquire about base statistics, competitive battle matchups, counters, abilities, or team compositions across all 9 Generations.",
       sources: [],
       is_unanswerable: false,
     },
   ]);
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [expandedSources, setExpandedSources] = useState({});
   const [copiedMsgId, setCopiedMsgId] = useState(null);
 
   const messagesEndRef = useRef(null);
@@ -158,7 +144,7 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       const errorMessage = {
         id: `err-${Date.now()}`,
         role: 'assistant',
-        text: `⚠️ ${err.message || 'Battle Coach archives unavailable. Please check connection and try again.'}`,
+        text: `Unable to access Pokédex archives: ${err.message || 'Please check your connection and try again.'}`,
         sources: [],
         is_error: true,
       };
@@ -190,7 +176,8 @@ export default function AskDex({ onCitationClick, initialQuery }) {
   const handleCopyMessage = async (msgId, text) => {
     if (!text) return;
     try {
-      await navigator.clipboard.writeText(text);
+      const cleaned = text.replace(/\s*\[S\d+\]/g, '');
+      await navigator.clipboard.writeText(cleaned);
       setCopiedMsgId(msgId);
       setTimeout(() => setCopiedMsgId(null), 2000);
     } catch (e) {
@@ -198,239 +185,252 @@ export default function AskDex({ onCitationClick, initialQuery }) {
     }
   };
 
-  const toggleSourceExpand = (msgId) => {
-    setExpandedSources((prev) => ({ ...prev, [msgId]: !prev[msgId] }));
-  };
-
   return (
-    <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-7.5rem)]">
-      {/* Top Bar: Suggestions & Control */}
-      <div className="py-2 border-b border-blue-500/20 flex items-center justify-between gap-4">
-        {/* Suggested Queries */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar flex-1">
-          <span className="text-blue-300 shrink-0 font-mono flex items-center gap-1.5 text-[11px] font-bold">
-            <Sparkles className="w-3 h-3 text-yellow-400" /> Suggestions:
-          </span>
-          {SUGGESTED_QUESTIONS.map((q, idx) => (
+    <div className="w-full max-w-5xl mx-auto py-2 flex flex-col h-[calc(100vh-6.5rem)]">
+      {/* Pokédex Intelligence Terminal Chassis */}
+      <div className="flex-1 min-w-0 flex flex-col bg-[#1e293b] border-2 border-[#334155] border-t-4 border-t-[#dc2626] shadow-md p-4 sm:p-6 overflow-hidden">
+        {/* Top Hardware Header & Suggested Prompts */}
+        <div className="pb-4 border-b border-[#334155] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Suggested Queries */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs sm:text-sm no-scrollbar flex-1">
+            <span className="text-amber-400 shrink-0 font-mono flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-yellow-400" /> Inquiries:
+            </span>
+            {SUGGESTED_QUESTIONS.map((q, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSend(q)}
+                disabled={loading}
+                className="shrink-0 px-3 py-1.5 bg-[#0f172a] hover:bg-[#334155] border border-[#334155] hover:border-yellow-400 text-slate-200 hover:text-white text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+
+          {/* Reset Chat Button */}
+          {messages.length > 1 && (
             <button
-              key={idx}
-              onClick={() => handleSend(q)}
-              disabled={loading}
-              className="shrink-0 px-3 py-1 rounded-full bg-[#0b142b] hover:bg-[#101e3d] border border-blue-500/20 hover:border-yellow-400/40 text-blue-100 text-[11px] transition-colors cursor-pointer"
+              onClick={handleClearChat}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0f172a] hover:bg-[#334155] border border-[#334155] text-slate-300 hover:text-white text-xs font-mono transition-colors cursor-pointer shrink-0 font-bold uppercase"
+              title="Reset conversation session"
             >
-              {q}
+              <RotateCcw className="w-3.5 h-3.5 text-yellow-400" />
+              <span>Reset</span>
             </button>
-          ))}
+          )}
         </div>
 
-        {/* Reset Chat Button */}
-        {messages.length > 1 && (
-          <button
-            onClick={handleClearChat}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0b142b] hover:bg-[#101e3d] border border-blue-500/20 text-blue-300 hover:text-white text-xs font-mono transition-colors cursor-pointer shrink-0 font-semibold"
-            title="Reset conversation context"
-          >
-            <RotateCcw className="w-3.5 h-3.5 text-yellow-400" />
-            <span className="hidden sm:inline">Reset Session</span>
-          </button>
-        )}
-      </div>
+        {/* Messages Scroll Area */}
+        <div className="flex-1 overflow-y-auto py-5 space-y-5 pr-2">
+          {messages.map((m) => {
+            const isUser = m.role === 'user';
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-6 pr-1">
-        {messages.map((m) => {
-          const isUser = m.role === 'user';
-          return (
-            <motion.div
-              key={m.id}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`flex gap-3.5 ${isUser ? 'justify-end' : 'justify-start'}`}
-            >
-              {/* Bot Avatar */}
-              {!isUser && (
-                <div className="w-8 h-8 rounded-full bg-[#0b142b] border border-yellow-400/50 p-1 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20 flex items-center justify-center">
-                  <PokeBall variant="standard" size={18} />
-                </div>
-              )}
+            // Deduplicate sources by pokemon_name and content_type
+            const uniqueSources = [];
+            const seenSourceKeys = new Set();
+            if (m.sources && Array.isArray(m.sources)) {
+              for (const s of m.sources) {
+                const key = `${s.pokemon_name || ''}-${s.content_type || ''}`;
+                if (!seenSourceKeys.has(key)) {
+                  seenSourceKeys.add(key);
+                  uniqueSources.push(s);
+                }
+              }
+            }
 
-              {/* Message Bubble */}
-              <div
-                className={`max-w-[85%] rounded-2xl p-4 sm:p-5 text-sm leading-relaxed relative group ${
-                  isUser
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-tr-xs shadow-lg shadow-blue-500/20 font-medium'
-                    : m.is_error
-                    ? 'bg-red-950/40 border border-red-500/40 text-red-200 rounded-tl-xs'
-                    : 'bg-[#0b142b] border border-blue-500/20 text-slate-100 rounded-tl-xs shadow-xl'
-                }`}
+            return (
+              <motion.div
+                key={m.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.15 }}
+                className={`flex gap-3 sm:gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}
               >
-                {/* Out of Scope Lore Banner */}
-                {m.is_unanswerable && (
-                  <div className="mb-3.5 p-3 rounded-xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex items-center gap-2 font-medium">
-                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Topic Outside Game Battle Records & Pokédex Lore</span>
+                {/* Bot Avatar */}
+                {!isUser && (
+                  <div className="w-9 h-9 bg-[#dc2626] border border-white p-1 shrink-0 mt-0.5 flex items-center justify-center shadow-xs">
+                    <PokeBall variant="standard" size={20} />
                   </div>
                 )}
 
-                {/* Formatted Message Body */}
-                {isUser ? (
-                  <div className="whitespace-pre-line font-medium">{m.text}</div>
-                ) : (
-                  <FormattedMessage
-                    text={m.text}
-                    sources={m.sources}
-                    onCitationClick={onCitationClick}
-                  />
-                )}
-
-                {/* Actions Footer for Bot Messages */}
-                {!isUser && !m.is_error && (
-                  <div className="mt-3 pt-2.5 border-t border-blue-500/15 flex items-center justify-between text-xs text-blue-300">
-                    <div className="flex items-center gap-2 font-mono text-[11px]">
-                      {m.sources && m.sources.length > 0 && (
-                        <button
-                          onClick={() => toggleSourceExpand(m.id)}
-                          className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer text-yellow-400 font-bold"
-                        >
-                          <BookOpen className="w-3.5 h-3.5" />
-                          <span>Field Records ({m.sources.length})</span>
-                          {expandedSources[m.id] ? (
-                            <ChevronUp className="w-3 h-3" />
-                          ) : (
-                            <ChevronDown className="w-3 h-3" />
-                          )}
-                        </button>
-                      )}
+                {/* Message Bubble Container */}
+                <div
+                  className={`max-w-[85%] text-sm sm:text-base leading-relaxed relative ${
+                    isUser
+                      ? 'bg-[#0f172a] text-slate-100 p-4 sm:p-5 border-2 border-sky-500/60 font-medium shadow-sm'
+                      : m.is_error
+                      ? 'bg-red-950/40 border-2 border-red-500 text-red-200 p-4 sm:p-5'
+                      : 'bg-[#0f172a] border-2 border-[#334155] border-l-4 border-l-yellow-400 text-slate-100 p-4 sm:p-5 shadow-sm'
+                  }`}
+                >
+                  {/* Out of Scope Lore Banner */}
+                  {m.is_unanswerable && (
+                    <div className="mb-3.5 p-3 bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs sm:text-sm flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span>Topic Outside Canonical Game Battle Records & Pokédex Database</span>
                     </div>
+                  )}
 
-                    {/* Copy Button */}
-                    <button
-                      onClick={() => handleCopyMessage(m.id, m.text)}
-                      className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-blue-300 text-[11px] font-mono"
-                      title="Copy response"
-                    >
-                      {copiedMsgId === m.id ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span className="text-emerald-400">Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
+                  {/* Formatted Message Body */}
+                  {isUser ? (
+                    <div className="whitespace-pre-line text-sm sm:text-base text-slate-100 font-sans">{m.text}</div>
+                  ) : (
+                    <FormattedMessage text={m.text} />
+                  )}
+
+                  {/* Clean Sources Section */}
+                  {!isUser && !m.is_error && uniqueSources.length > 0 && (
+                    <div className="mt-4 pt-3 border-t border-[#334155]">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-amber-400 font-bold">
+                          <FileText className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Sources ({uniqueSources.length})</span>
+                        </div>
+                        <span className="text-xs font-mono text-slate-400">
+                          Verified Game Evidence
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {uniqueSources.map((src, sIdx) => {
+                          const title = src.pokemon_name
+                            ? `${src.pokemon_name} • ${formatContentType(src.content_type)}`
+                            : formatContentType(src.content_type);
+                          const hasUrl =
+                            src.source_url &&
+                            (src.source_url.startsWith('http://') || src.source_url.startsWith('https://'));
+
+                          return hasUrl ? (
+                            <a
+                              key={sIdx}
+                              href={src.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#1e293b] hover:bg-[#334155] border border-[#334155] hover:border-slate-400 text-xs text-sky-400 hover:text-sky-300 font-medium transition-colors"
+                              title={`Open source: ${src.source_url}`}
+                            >
+                              <span>{title}</span>
+                              <ExternalLink className="w-3 h-3 text-sky-400" />
+                            </a>
+                          ) : (
+                            <button
+                              key={sIdx}
+                              onClick={() => onCitationClick && onCitationClick(src)}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#1e293b] hover:bg-[#334155] border border-[#334155] hover:border-slate-400 text-xs text-slate-200 hover:text-white font-medium transition-colors cursor-pointer"
+                              title="Inspect verified field document"
+                            >
+                              <span>{title}</span>
+                              {src.version_group && src.version_group !== 'all' && (
+                                <span className="text-xs text-amber-400 font-mono">
+                                  ({src.version_group})
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer Copy Action */}
+                  {!isUser && !m.is_error && (
+                    <div className="mt-3 pt-2.5 border-t border-[#334155] flex items-center justify-between text-xs text-slate-400">
+                      <span className="text-xs font-mono text-slate-400 uppercase font-semibold">
+                        DexMind National Intelligence
+                      </span>
+
+                      <button
+                        onClick={() => handleCopyMessage(m.id, m.text)}
+                        className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer text-slate-400 text-xs font-mono font-bold"
+                        title="Copy response"
+                      >
+                        {copiedMsgId === m.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <span className="text-emerald-400">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* User Avatar */}
+                {isUser && (
+                  <div className="w-9 h-9 bg-[#0284c7] border border-white flex items-center justify-center shrink-0 mt-0.5 text-white shadow-xs">
+                    <User className="w-5 h-5" />
                   </div>
                 )}
+              </motion.div>
+            );
+          })}
 
-                {/* Field Records Accordion Drawer */}
-                {!isUser && m.sources && m.sources.length > 0 && expandedSources[m.id] && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-3 space-y-2 pt-2 border-t border-blue-500/15"
-                  >
-                    {m.sources.map((src, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => onCitationClick && onCitationClick(src)}
-                        className="bg-[#060b19] p-3 rounded-xl border border-blue-500/20 hover:border-yellow-400/50 cursor-pointer transition-colors"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-mono font-bold text-yellow-400 bg-yellow-400/15 px-1.5 py-0.5 rounded border border-yellow-400/30">
-                              {src.citation_tag}
-                            </span>
-                            <span className="font-bold text-white capitalize text-xs">
-                              {src.pokemon_name}
-                            </span>
-                            <span className="text-[10px] text-blue-300 font-mono uppercase bg-blue-500/10 px-1.5 py-0.2 rounded border border-blue-500/20">
-                              {src.content_type?.replace('_', ' ')}
-                            </span>
-                          </div>
-                          <span className="text-[10px] text-blue-300/70 font-mono">
-                            View details
-                          </span>
-                        </div>
-                        <p className="text-xs text-blue-200/75 line-clamp-2 italic">
-                          "{src.content}"
-                        </p>
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
+          {/* Loading Indicator */}
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex gap-3 sm:gap-4 items-start"
+            >
+              <div className="w-9 h-9 bg-[#dc2626] border border-white p-1 shrink-0 mt-0.5 flex items-center justify-center shadow-xs">
+                <PokeBall variant="ultra" size={20} />
               </div>
 
-              {/* User Avatar */}
-              {isUser && (
-                <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-400/40 flex items-center justify-center shrink-0 mt-0.5 text-blue-200 shadow-xs">
-                  <User className="w-4 h-4" />
-                </div>
-              )}
+              <div className="bg-[#0f172a] border-2 border-yellow-400/50 p-4 text-xs sm:text-sm font-mono text-amber-400 flex items-center gap-3">
+                <span className="w-2.5 h-2.5 bg-yellow-400 animate-pulse" />
+                <span className="font-bold uppercase tracking-wider">Analyzing National Pokédex records...</span>
+              </div>
             </motion.div>
-          );
-        })}
+          )}
 
-        {/* Loading Indicator */}
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3.5 items-start"
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Box Area */}
+        <div className="pt-4 border-t border-[#334155]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="relative flex items-center"
           >
-            <div className="w-8 h-8 rounded-full bg-[#0b142b] border border-yellow-400/50 p-1 shrink-0 mt-0.5 shadow-md shadow-yellow-400/20 flex items-center justify-center animate-spin">
-              <PokeBall variant="ultra" size={18} />
-            </div>
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputQuery}
+              onChange={(e) => setInputQuery(e.target.value)}
+              placeholder="Ask Pokédex AI about matchups, counters, stats, or team composition across Gen 1–9..."
+              disabled={loading}
+              className="w-full bg-[#0f172a] border-2 border-[#475569] focus:border-yellow-400 px-5 py-3.5 pr-16 text-sm sm:text-base text-white placeholder-slate-400 focus:outline-hidden transition-colors font-sans"
+            />
+            <button
+              type="submit"
+              disabled={!inputQuery.trim() || loading}
+              className={`absolute right-2 px-4 py-2 transition-colors font-black text-xs sm:text-sm uppercase tracking-wider ${
+                inputQuery.trim() && !loading
+                  ? 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 cursor-pointer border border-yellow-300'
+                  : 'bg-slate-700 text-slate-500 cursor-not-allowed border border-slate-600'
+              }`}
+              title="Send query (Enter)"
+            >
+              <Send className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
+            </button>
+          </form>
 
-            <div className="bg-[#0b142b] border border-blue-500/20 rounded-2xl rounded-tl-xs p-4 text-xs font-mono text-yellow-300 flex items-center gap-3 shadow-md">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-400" />
-              </span>
-              <span>Consulting National Pokédex Archives...</span>
-            </div>
-          </motion.div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Input Box Area */}
-      <div className="pt-2 pb-3">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSend();
-          }}
-          className="relative flex items-center"
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputQuery}
-            onChange={(e) => setInputQuery(e.target.value)}
-            placeholder="Ask Battle Coach about matchups, counters, stats, or team composition across Gen 1–9..."
-            disabled={loading}
-            className="w-full bg-[#0b142b] border border-blue-500/25 focus:border-yellow-400 rounded-2xl px-5 py-3.5 pr-14 text-sm text-white placeholder-blue-300/50 focus:outline-hidden transition-all shadow-xl"
-          />
-          <button
-            type="submit"
-            disabled={!inputQuery.trim() || loading}
-            className={`absolute right-2.5 p-2 rounded-xl transition-all ${
-              inputQuery.trim() && !loading
-                ? 'bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-300 hover:to-amber-300 text-slate-950 font-bold shadow-md shadow-yellow-400/25 cursor-pointer'
-                : 'text-blue-500/40 cursor-not-allowed'
-            }`}
-          >
-            <Send className="w-4 h-4 stroke-[2.5]" />
-          </button>
-        </form>
-
-        <div className="flex items-center justify-between text-[11px] text-blue-300/70 mt-2 font-mono px-2">
-          <span>Trainer Memory Active • 6-Turn Tactical Retention</span>
-          <span>Official Pokémon League Battle Intelligence</span>
+          <div className="flex items-center justify-between text-xs text-slate-400 mt-2.5 font-mono px-1">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-emerald-400" />
+              Trainer Memory Active • 6-Turn Context Retention
+            </span>
+            <span>Press Enter to Submit</span>
+          </div>
         </div>
       </div>
     </div>

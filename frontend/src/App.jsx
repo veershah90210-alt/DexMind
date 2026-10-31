@@ -8,7 +8,41 @@ import ComparePage from './pages/ComparePage';
 import { fetchHealth } from './services/api';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const getInitialTab = () => {
+    try {
+      const hash = window.location.hash.replace('#', '');
+      if (['dashboard', 'ask', 'pokedex', 'compare'].includes(hash)) return hash;
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (['dashboard', 'ask', 'pokedex', 'compare'].includes(tabParam)) return tabParam;
+    } catch {
+      // fallback
+    }
+    return 'dashboard';
+  };
+
+  const [activeTab, setActiveTabState] = useState(getInitialTab);
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    try {
+      window.location.hash = tab;
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (['dashboard', 'ask', 'pokedex', 'compare'].includes(hash)) {
+        setActiveTabState(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const [healthInfo, setHealthInfo] = useState(null);
   const [activeCitation, setActiveCitation] = useState(null);
   const [compareSelection, setCompareSelection] = useState([]);
@@ -52,8 +86,8 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#060b19] text-slate-100 flex flex-col font-sans selection:bg-yellow-400/30 selection:text-yellow-200 bg-grid-pattern">
-      {/* Top Floating / Blurred Navigation */}
+    <div className="min-h-screen bg-[#0f172a] text-slate-100 flex flex-col font-sans selection:bg-yellow-400 selection:text-slate-950">
+      {/* Top Pokédex Device Header */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -61,8 +95,8 @@ export default function App() {
         onQuickSearch={() => setActiveTab('pokedex')}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      {/* Main Content Area - Maximizing Available Left & Right Space */}
+      <main className="flex-1 w-full max-w-[1720px] mx-auto px-3 sm:px-6 py-4">
         {activeTab === 'dashboard' && (
           <Home
             healthInfo={healthInfo}
@@ -105,19 +139,19 @@ export default function App() {
         onClose={() => setActiveCitation(null)}
       />
 
-      {/* Official League Footer */}
-      <footer className="border-t border-blue-500/15 py-6 mt-auto bg-[#060b19]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-blue-300/70 font-mono">
+      {/* Pokédex Chassis Footer */}
+      <footer className="border-t-2 border-red-700 py-3 mt-auto bg-[#0b1329]">
+        <div className="max-w-[1720px] mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-slate-300 font-mono">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-yellow-400 shadow-xs shadow-yellow-400" />
-            <span className="text-white font-bold">DexMind</span>
-            <span>— The Definitive National Pokédex & Battle Intelligence Platform</span>
+            <span className="w-2.5 h-2.5 bg-yellow-400 border border-slate-900" />
+            <span className="text-white font-black tracking-wider">DexMind</span>
+            <span className="text-slate-400">— Official National Pokédex Operating System</span>
           </div>
 
-          <div className="flex items-center gap-3 text-[11px] text-blue-400/60 flex-wrap justify-center">
-            <span>Gen 1 through Gen 9</span>
+          <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap justify-center font-bold">
+            <span className="text-yellow-400">Gen 1–9 Unified Registry</span>
             <span>•</span>
-            <span>1,025 Pokémon Registered</span>
+            <span className="text-emerald-400">1,025 Pokémon Registered</span>
             <span>•</span>
             <span>Pokémon © Nintendo / Creatures Inc. / GAME FREAK inc.</span>
           </div>

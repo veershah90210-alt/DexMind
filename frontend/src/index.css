@@ -2,106 +2,63 @@
 
 @layer base {
   :root {
-    --bg-base: #060b19;
-    --surface-1: #0b142b;
-    --surface-2: #101e3d;
-    --surface-3: #162850;
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-glow: rgba(250, 204, 21, 0.4);
-    --brand-yellow: #facc15;
-    --brand-blue: #2563eb;
-    --brand-cyan: #38bdf8;
+    --bg-base: #0f172a;
+    --surface-1: #1e293b;
+    --surface-2: #28354e;
+    --surface-3: #334155;
+    --border-subtle: #334155;
+    --pokedex-red: #dc2626;
+    --pokedex-crimson: #b91c1c;
+    --pokedex-yellow: #facc15;
+    --pokedex-blue: #2563eb;
+    --pokedex-green: #16a34a;
+    --pokedex-cyan: #06b6d4;
   }
 
   body {
-    background-color: var(--bg-base);
+    background-color: #0f172a;
     color: #f8fafc;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Strict geometric rule: remove rounded borders throughout Pokédex interface */
+  *, *::before, *::after {
+    border-radius: 0 !important;
+  }
 }
 
-/* Background Subtle Dot Pattern */
-.bg-grid-pattern {
-  background-image: radial-gradient(rgba(59, 130, 246, 0.12) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-/* Glassmorphism helpers with Midnight Navy */
-.glass-panel {
-  background: rgba(11, 20, 43, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.glass-panel-elevated {
-  background: rgba(16, 30, 61, 0.9);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 20px 40px -15px rgba(2, 6, 23, 0.8);
-}
-
-/* Custom Scrollbars */
+/* Custom Scrollbars - Boxy & Sharp */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #060b19;
+  background: #0f172a;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e3a6e;
-  border-radius: 9999px;
-  border: 1px solid rgba(250, 204, 21, 0.15);
+  background: #334155;
+  border: 1px solid #dc2626;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2563eb;
+  background: #facc15;
 }
 
-/* Glow effects */
-.glow-yellow {
-  box-shadow: 0 0 25px -4px rgba(250, 204, 21, 0.35);
-}
-
-.glow-blue {
-  box-shadow: 0 0 25px -4px rgba(37, 99, 235, 0.4);
-}
-
-.glow-subtle {
-  box-shadow: 0 4px 20px -2px rgba(2, 6, 23, 0.6);
-}
-
-/* Animation keyframes */
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.02); }
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-@keyframes electric-glow {
-  0%, 100% { filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6)); }
-  50% { filter: drop-shadow(0 0 16px rgba(59, 130, 246, 0.7)); }
-}
-
-.animate-electric {
-  animation: electric-glow 3s ease-in-out infinite;
+:focus-visible {
+  outline: 2px solid #facc15;
+  outline-offset: 1px;
 }

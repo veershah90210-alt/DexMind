@@ -78,7 +78,7 @@ export default function Pokedex({
   const [selectedType, setSelectedType] = useState('All');
   const [selectedGen, setSelectedGen] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(48);
+  const [pageSize, setPageSize] = useState(60);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedPokemon, setSelectedPokemon] = useState(null);
@@ -180,47 +180,47 @@ export default function Pokedex({
   const modalTypeStyle = getTypeStyle(modalPrimaryType);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto py-2">
-      {/* Top Controls: Search, Generation selector, Type filter, Compare bar */}
-      <div className="bg-[#0b142b] border border-blue-500/20 rounded-2xl p-4 sm:p-5 shadow-xl space-y-4">
-        {/* Row 1: Search & Compare Button */}
-        <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-300" />
+    <div className="space-y-5 w-full max-w-[1720px] mx-auto py-2">
+      {/* Top Controls: Pokédex Hardware Toolbar */}
+      <div className="bg-[#1e293b] border-2 border-[#334155] border-t-4 border-t-[#dc2626] p-4 sm:p-5 space-y-4 shadow-md">
+        {/* Row 1: Search & Matchup Lab Trigger */}
+        <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+          <div className="relative flex-1 max-w-xl">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search 1,025 Pokémon by name across Gen 1–9... (Press /)"
-              className="w-full bg-[#060b19] border border-blue-500/20 focus:border-yellow-400 rounded-xl pl-10 pr-9 py-2.5 text-sm text-white placeholder-blue-300/50 focus:outline-hidden transition-all shadow-inner"
+              placeholder="Search Pokémon by name or ID (Gen 1–9)... (Press /)"
+              className="w-full bg-[#0f172a] border-2 border-[#475569] focus:border-yellow-400 pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-400 focus:outline-hidden transition-colors font-sans"
             />
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-300 hover:text-white p-0.5 cursor-pointer"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
 
-          {/* Compare Trigger Floating Button if items selected */}
+          {/* Compare Trigger Button */}
           {compareSelection && compareSelection.length > 0 && (
             <button
               onClick={() => setActiveTab('compare')}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-300 hover:to-amber-300 text-slate-950 text-xs font-black flex items-center justify-center gap-2 shadow-lg shadow-yellow-400/25 transition-all cursor-pointer"
+              className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-colors cursor-pointer shrink-0 border border-yellow-300 uppercase tracking-wider"
             >
-              <ArrowUpDown className="w-4 h-4" />
+              <ArrowUpDown className="w-4 h-4 stroke-[2.5]" />
               <span>Launch Matchup Lab ({compareSelection.length}/2)</span>
             </button>
           )}
         </div>
 
-        {/* Row 2: Generation Filter Tabs */}
+        {/* Row 2: Generation Filter Selector */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <div className="flex items-center gap-1.5 text-blue-300 font-mono text-[11px] shrink-0 mr-1 font-bold">
-            <Layers className="w-3.5 h-3.5 text-yellow-400" />
+          <div className="flex items-center gap-1.5 text-amber-400 font-mono text-xs shrink-0 mr-1 font-bold uppercase tracking-wider">
+            <Layers className="w-4 h-4 text-yellow-400" />
             <span>Gen:</span>
           </div>
           <div className="flex gap-1.5 flex-nowrap">
@@ -230,15 +230,15 @@ export default function Pokedex({
                 <button
                   key={g.id}
                   onClick={() => setSelectedGen(g.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors duration-150 cursor-pointer flex items-center gap-1.5 border ${
                     isSelected
-                      ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-slate-950 shadow-md shadow-yellow-400/20'
-                      : 'bg-[#060b19]/70 hover:bg-[#101e3d] text-blue-200/80 hover:text-white border border-blue-500/20'
+                      ? 'bg-yellow-400 text-slate-950 font-black border-yellow-300 shadow-xs'
+                      : 'bg-[#0f172a] hover:bg-[#334155] text-slate-200 hover:text-white border-[#334155]'
                   }`}
                 >
                   <span>{g.label}</span>
                   {g.region !== 'All' && (
-                    <span className={`text-[10px] font-mono ${isSelected ? 'text-slate-950 font-extrabold' : 'text-blue-400'}`}>
+                    <span className={`text-xs font-mono ${isSelected ? 'text-slate-950 font-bold' : 'text-amber-400'}`}>
                       {g.region}
                     </span>
                   )}
@@ -248,10 +248,10 @@ export default function Pokedex({
           </div>
         </div>
 
-        {/* Row 3: Type Filter Pills */}
+        {/* Row 3: Type Filter Badges */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <div className="flex items-center gap-1.5 text-blue-300 font-mono text-[11px] shrink-0 mr-1 font-bold">
-            <Filter className="w-3.5 h-3.5 text-yellow-400" />
+          <div className="flex items-center gap-1.5 text-amber-400 font-mono text-xs shrink-0 mr-1 font-bold uppercase tracking-wider">
+            <Filter className="w-4 h-4 text-yellow-400" />
             <span>Type:</span>
           </div>
           <div className="flex gap-1.5 flex-nowrap">
@@ -261,10 +261,10 @@ export default function Pokedex({
                 <button
                   key={t}
                   onClick={() => setSelectedType(t)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer ${
+                  className={`px-2.5 py-1 text-xs font-bold whitespace-nowrap transition-colors duration-150 cursor-pointer border uppercase tracking-wider ${
                     isSelected
-                      ? 'bg-yellow-400 text-slate-950 shadow-xs'
-                      : 'bg-[#060b19]/70 hover:bg-[#101e3d] text-blue-200/80 hover:text-white border border-blue-500/20'
+                      ? 'bg-yellow-400 text-slate-950 border-yellow-300 shadow-xs'
+                      : 'bg-[#0f172a] hover:bg-[#334155] text-slate-300 hover:text-white border-[#334155]'
                   }`}
                 >
                   {t}
@@ -274,15 +274,15 @@ export default function Pokedex({
           </div>
         </div>
 
-        {/* Row 4: Results Counter & Quick Reset */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-[11px] font-mono text-blue-200/80 pt-2 border-t border-blue-500/15 gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
+        {/* Row 4: Results Counter & Per Page */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs font-mono text-slate-300 pt-3 border-t border-[#334155] gap-2">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <span>
               Showing <strong className="text-yellow-400 font-bold">{startRecord}–{endRecord}</strong> of{' '}
               <strong className="text-white font-bold">{totalCount}</strong> Pokémon
             </span>
             {selectedGen !== 'All' && (
-              <span className="text-blue-300 font-bold">• Gen {selectedGen}</span>
+              <span className="text-sky-400 font-bold">• Gen {selectedGen}</span>
             )}
             {selectedType !== 'All' && (
               <span className="text-amber-400 font-bold">• {selectedType} type</span>
@@ -291,16 +291,16 @@ export default function Pokedex({
 
           <div className="flex items-center gap-3">
             {/* Page Size Selector */}
-            <div className="flex items-center gap-1.5 text-blue-300">
-              <span className="text-[10px]">Per page:</span>
-              {[24, 48, 96].map((size) => (
+            <div className="flex items-center gap-1.5 text-slate-300">
+              <span className="text-xs uppercase font-bold text-slate-400">Per page:</span>
+              {[24, 36, 48, 72].map((size) => (
                 <button
                   key={size}
                   onClick={() => setPageSize(size)}
-                  className={`px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer ${
+                  className={`px-2 py-0.5 text-xs font-mono font-bold cursor-pointer border ${
                     pageSize === size
-                      ? 'bg-yellow-400 text-slate-950 font-black'
-                      : 'text-blue-300/70 hover:text-white'
+                      ? 'bg-yellow-400 text-slate-950 border-yellow-300'
+                      : 'bg-[#0f172a] border-[#334155] text-slate-300 hover:text-white hover:border-slate-500'
                   }`}
                 >
                   {size}
@@ -315,7 +315,7 @@ export default function Pokedex({
                   setSelectedType('All');
                   setSearchTerm('');
                 }}
-                className="text-yellow-400 hover:text-yellow-300 underline cursor-pointer text-[10px] font-bold"
+                className="text-amber-400 hover:text-amber-300 underline cursor-pointer text-xs font-bold uppercase tracking-wider"
               >
                 Reset filters
               </button>
@@ -324,15 +324,15 @@ export default function Pokedex({
         </div>
       </div>
 
-      {/* Grid of Pokémon */}
+      {/* Grid of Pokémon - Generously Spaced 2 to 6 Columns */}
       {loading ? (
-        <div className="py-24 text-center text-blue-300 font-mono text-xs flex flex-col items-center justify-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-yellow-400 border-t-transparent animate-spin" />
-          <span>Scanning National Pokédex Archives...</span>
+        <div className="py-28 text-center text-amber-400 font-mono text-sm flex flex-col items-center justify-center gap-4 bg-[#1e293b] border-2 border-[#334155]">
+          <div className="w-10 h-10 border-3 border-yellow-400 border-t-transparent animate-spin" />
+          <span className="tracking-wider uppercase font-bold">Scanning National Pokédex Archives...</span>
         </div>
       ) : pokemonList.length === 0 ? (
-        <div className="py-20 text-center bg-[#0b142b] rounded-2xl border border-blue-500/20 p-8 space-y-4">
-          <p className="text-blue-200 text-sm">
+        <div className="py-24 text-center bg-[#1e293b] border-2 border-[#334155] p-8 space-y-4">
+          <p className="text-slate-200 text-base font-semibold">
             No Pokémon found matching your query.
           </p>
           <button
@@ -341,14 +341,14 @@ export default function Pokedex({
               setSelectedType('All');
               setSelectedGen('All');
             }}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold border border-blue-400/30 cursor-pointer shadow-md"
+            className="px-5 py-2.5 bg-[#dc2626] hover:bg-[#b91c1c] text-white text-xs sm:text-sm font-bold border border-red-500 cursor-pointer uppercase tracking-wider"
           >
             Clear Filters
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 sm:gap-4">
             {pokemonList.map((p) => {
               const isSelected = compareSelection?.some((sel) => sel.id === p.id);
               return (
@@ -365,18 +365,18 @@ export default function Pokedex({
 
           {/* Pagination Navigation Bar */}
           {totalPages > 1 && (
-            <div className="bg-[#0b142b] border border-blue-500/20 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <span className="font-mono text-blue-200 text-[11px]">
+            <div className="bg-[#1e293b] border-2 border-[#334155] border-b-4 border-b-[#dc2626] p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm shadow-sm">
+              <span className="font-mono text-slate-300 text-xs sm:text-sm">
                 Page <strong className="text-yellow-400 font-bold">{currentPage}</strong> of{' '}
                 <strong className="text-white font-bold">{totalPages}</strong>
               </span>
 
-              <div className="flex items-center gap-1 font-mono">
+              <div className="flex items-center gap-1.5 font-mono">
                 {/* First Page Button */}
                 <button
                   onClick={() => handlePageChange(1)}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-blue-500/20 bg-[#060b19] text-blue-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-blue-600/20 transition-colors cursor-pointer"
+                  className="p-2 border border-[#475569] bg-[#0f172a] text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-[#334155] transition-colors cursor-pointer"
                   title="First Page"
                 >
                   <ChevronsLeft className="w-4 h-4" />
@@ -386,7 +386,7 @@ export default function Pokedex({
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-1.5 rounded-lg border border-blue-500/20 bg-[#060b19] text-blue-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-blue-600/20 transition-colors cursor-pointer"
+                  className="p-2 border border-[#475569] bg-[#0f172a] text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-[#334155] transition-colors cursor-pointer"
                   title="Previous Page"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -397,7 +397,7 @@ export default function Pokedex({
                   {getPageNumbers().map((item, idx) => {
                     if (item === '...') {
                       return (
-                        <span key={`ellipsis-${idx}`} className="px-1 text-blue-400/60 font-mono text-xs">
+                        <span key={`ellipsis-${idx}`} className="px-1.5 text-slate-400 font-mono text-sm">
                           ...
                         </span>
                       );
@@ -407,10 +407,10 @@ export default function Pokedex({
                       <button
                         key={item}
                         onClick={() => handlePageChange(item)}
-                        className={`min-w-8 h-8 px-2 rounded-lg text-xs font-mono font-bold transition-all cursor-pointer ${
+                        className={`min-w-8 h-8 px-2.5 text-xs sm:text-sm font-mono font-bold transition-colors cursor-pointer border ${
                           isCurrent
-                            ? 'bg-gradient-to-r from-yellow-400 to-amber-400 text-slate-950 shadow-md shadow-yellow-400/20 font-black'
-                            : 'border border-blue-500/20 bg-[#060b19] text-blue-200 hover:text-white hover:bg-blue-600/20'
+                            ? 'bg-yellow-400 text-slate-950 font-black border-yellow-300'
+                            : 'border-[#475569] bg-[#0f172a] text-slate-300 hover:text-white hover:bg-[#334155]'
                         }`}
                       >
                         {item}
@@ -423,7 +423,7 @@ export default function Pokedex({
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-blue-500/20 bg-[#060b19] text-blue-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-blue-600/20 transition-colors cursor-pointer"
+                  className="p-2 border border-[#475569] bg-[#0f172a] text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-[#334155] transition-colors cursor-pointer"
                   title="Next Page"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -433,7 +433,7 @@ export default function Pokedex({
                 <button
                   onClick={() => handlePageChange(totalPages)}
                   disabled={currentPage === totalPages}
-                  className="p-1.5 rounded-lg border border-blue-500/20 bg-[#060b19] text-blue-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-blue-600/20 transition-colors cursor-pointer"
+                  className="p-2 border border-[#475569] bg-[#0f172a] text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none hover:bg-[#334155] transition-colors cursor-pointer"
                   title="Last Page"
                 >
                   <ChevronsRight className="w-4 h-4" />
@@ -464,43 +464,39 @@ export default function Pokedex({
               exit={{ scale: 0.95, opacity: 0, y: 15 }}
               transition={{ type: 'spring', stiffness: 450, damping: 30 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative bg-[#0b142b] border border-blue-500/30 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10"
+              className="relative bg-[#1e293b] border-2 border-[#475569] border-t-4 border-t-[#dc2626] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[88vh] z-10"
             >
-              {/* Header */}
-              <div className="bg-[#0f1d38] px-6 py-4 border-b border-blue-500/20 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-yellow-400/10 border border-yellow-400/20">
-                    <PokeBall variant="standard" size={15} />
-                    <span className="font-mono text-yellow-400 text-xs font-black">
-                      #{String(selectedPokemon.id).padStart(4, '0')}
-                    </span>
+              {/* Pokédex Device Header */}
+              <div className="bg-[#c0262d] px-5 py-3 border-b-2 border-[#8e1920] flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  {/* Blue camera sensor lens dot */}
+                  <div className="w-3.5 h-3.5 bg-sky-400 border border-white shrink-0" />
+                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-yellow-400 text-slate-950 font-black text-xs font-mono border border-yellow-300">
+                    <PokeBall variant="standard" size={13} />
+                    <span>#{String(selectedPokemon.id).padStart(4, '0')}</span>
                   </div>
-                  <h2 className="text-xl font-black text-white capitalize tracking-tight">
+                  <h2 className="text-base font-black text-white capitalize tracking-tight font-sans">
                     {selectedPokemon.name}
                   </h2>
-                  <span className="text-xs text-blue-300 italic">
+                  <span className="text-xs text-red-100 font-mono">
                     ({selectedPokemon.genus || 'Pokémon'})
                   </span>
                 </div>
                 <button
                   onClick={() => setSelectedPokemon(null)}
-                  className="text-blue-300 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
+                  className="text-white hover:text-yellow-300 p-1 bg-red-800 hover:bg-red-700 transition-colors cursor-pointer border border-red-900"
                   title="Close (Esc)"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 overflow-y-auto space-y-6 text-sm">
+              <div className="p-5 overflow-y-auto space-y-4 text-sm bg-[#1e293b]">
                 {/* Hero Showcase */}
-                <div className="relative overflow-hidden flex flex-col sm:flex-row items-center gap-6 bg-[#060b19] p-5 rounded-2xl border border-blue-500/20">
-                  <div
-                    className="absolute -top-12 -left-12 w-32 h-32 rounded-full blur-2xl pointer-events-none opacity-40"
-                    style={{ backgroundColor: modalTypeStyle.glow }}
-                  />
-                  <div className="absolute -right-8 -bottom-8 pointer-events-none opacity-10">
-                    <PokeBall variant="watermark" size={150} />
+                <div className="relative overflow-hidden flex flex-col sm:flex-row items-center gap-5 bg-[#0f172a] p-4 border border-[#334155]">
+                  <div className="absolute -right-6 -bottom-6 pointer-events-none opacity-5">
+                    <PokeBall variant="watermark" size={120} />
                   </div>
 
                   <img
@@ -509,9 +505,9 @@ export default function Pokedex({
                       e.currentTarget.src = selectedPokemon.sprite_url || `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${selectedPokemon.id}.png`;
                     }}
                     alt={selectedPokemon.name}
-                    className="w-32 h-32 object-contain drop-shadow-xl relative z-10 select-none"
+                    className="w-28 h-28 object-contain relative z-10 select-none"
                   />
-                  <div className="flex-1 space-y-2.5 text-center sm:text-left relative z-10">
+                  <div className="flex-1 space-y-2 text-center sm:text-left relative z-10">
                     <div className="flex flex-wrap gap-1.5 justify-center sm:justify-start">
                       {selectedPokemon.types?.map((t) => {
                         const typeName = typeof t === 'string' ? t : t.name;
@@ -519,14 +515,14 @@ export default function Pokedex({
                         return (
                           <span
                             key={typeName}
-                            className={`text-xs font-bold uppercase px-2.5 py-0.5 rounded-md tracking-wider border ${style.bg} ${style.border} ${style.text}`}
+                            className={`text-[10px] font-black uppercase px-2.5 py-0.5 tracking-wider border ${style.bg} ${style.border} ${style.text}`}
                           >
                             {typeName}
                           </span>
                         );
                       })}
                     </div>
-                    <div className="text-xs font-mono text-blue-200/80 grid grid-cols-2 gap-2 pt-1">
+                    <div className="text-xs font-mono text-slate-300 grid grid-cols-2 gap-2 pt-0.5">
                       <div>
                         Height:{' '}
                         <span className="text-white font-bold">
@@ -543,22 +539,22 @@ export default function Pokedex({
                   </div>
                 </div>
 
-                {/* Base Stats with Animated Progress Bars */}
+                {/* Base Stats */}
                 {selectedPokemon.stats && (
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-mono uppercase tracking-wider text-blue-300 font-bold">
+                      <h4 className="text-[11px] font-mono uppercase tracking-wider text-amber-400 font-bold">
                         Base Statistics
                       </h4>
-                      <span className="text-xs font-mono text-blue-200">
+                      <span className="text-xs font-mono text-slate-300">
                         Total BST:{' '}
-                        <strong className="text-yellow-400 font-black">
+                        <strong className="text-yellow-400 font-bold">
                           {selectedPokemon.stats.total || 'N/A'}
                         </strong>
                       </span>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {Object.entries(selectedPokemon.stats).map(([k, v]) => {
                         const config = STAT_CONFIG[k] || { name: k, max: 255 };
                         const pct = Math.min(Math.round((v / config.max) * 100), 100);
@@ -568,24 +564,24 @@ export default function Pokedex({
                         return (
                           <div
                             key={k}
-                            className="bg-[#060b19] p-2.5 px-3 rounded-xl border border-blue-500/15 flex items-center justify-between gap-4 text-xs font-mono"
+                            className="bg-[#0f172a] p-2 px-2.5 border border-[#334155] flex items-center justify-between gap-3 text-xs font-mono"
                           >
-                            <span className="w-24 text-blue-300 uppercase text-[11px] truncate font-semibold">
+                            <span className="w-24 text-slate-300 uppercase text-[10px] truncate font-bold">
                               {k.replace('_', ' ')}
                             </span>
-                            <div className="flex-1 h-2 bg-blue-950/60 rounded-full overflow-hidden">
+                            <div className="flex-1 h-2 bg-[#1e293b] border border-[#334155] overflow-hidden">
                               <div
                                 style={{ width: `${pct}%` }}
-                                className={`h-full rounded-full transition-all duration-300 ${
+                                className={`h-full ${
                                   isHigh
-                                    ? 'bg-yellow-400'
+                                    ? 'bg-amber-400'
                                     : isMid
-                                    ? 'bg-blue-400'
-                                    : 'bg-slate-500'
+                                    ? 'bg-sky-400'
+                                    : 'bg-emerald-500'
                                 }`}
                               />
                             </div>
-                            <span className="w-8 text-right text-white font-bold">{v}</span>
+                            <span className="w-8 text-right text-white font-bold text-xs">{v}</span>
                           </div>
                         );
                       })}
@@ -596,10 +592,10 @@ export default function Pokedex({
                 {/* Evolution Chain */}
                 {selectedPokemon.evolution_text && (
                   <div>
-                    <h4 className="text-xs font-mono uppercase tracking-wider text-blue-300 font-bold mb-1.5">
-                      Evolution Chain
+                    <h4 className="text-[11px] font-mono uppercase tracking-wider text-amber-400 font-bold mb-1">
+                      Evolution Path
                     </h4>
-                    <p className="bg-[#060b19] p-3.5 rounded-xl border border-blue-500/15 text-xs text-blue-100/90 leading-relaxed font-sans">
+                    <p className="bg-[#0f172a] p-3 border border-[#334155] text-xs text-slate-200 leading-relaxed font-sans">
                       {selectedPokemon.evolution_text}
                     </p>
                   </div>
@@ -607,27 +603,27 @@ export default function Pokedex({
 
                 {/* Abilities */}
                 {selectedPokemon.abilities && selectedPokemon.abilities.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-mono uppercase tracking-wider text-blue-300 font-bold">
+                  <div className="space-y-1.5">
+                    <h4 className="text-[11px] font-mono uppercase tracking-wider text-amber-400 font-bold">
                       Abilities
                     </h4>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {selectedPokemon.abilities.map((ab, idx) => (
                         <div
                           key={idx}
-                          className="bg-[#060b19] p-3 rounded-xl border border-blue-500/15 text-xs"
+                          className="bg-[#0f172a] p-2.5 border border-[#334155] text-xs"
                         >
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-bold text-white capitalize">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="font-bold text-white capitalize text-xs">
                               {ab.name}
                             </span>
                             {ab.is_hidden && (
-                              <span className="text-[10px] bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 px-1.5 py-0.2 rounded font-mono font-bold">
-                                Hidden Ability
+                              <span className="text-[9px] bg-yellow-400/20 border border-yellow-400/40 text-yellow-300 px-1 py-0.2 font-mono font-bold uppercase">
+                                Hidden
                               </span>
                             )}
                           </div>
-                          <p className="text-blue-200/70 text-[11px] leading-relaxed">
+                          <p className="text-slate-300 text-[11px] leading-relaxed">
                             {ab.effect || ab.short_effect || 'No description available.'}
                           </p>
                         </div>
@@ -638,7 +634,7 @@ export default function Pokedex({
               </div>
 
               {/* Footer with Actions */}
-              <div className="bg-[#0f1d38] px-6 py-3.5 border-t border-blue-500/20 flex items-center justify-between gap-3">
+              <div className="bg-[#0f172a] px-5 py-3 border-t-2 border-[#334155] flex items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => {
@@ -646,9 +642,9 @@ export default function Pokedex({
                       setSelectedPokemon(null);
                       setActiveTab('compare');
                     }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#060b19] hover:bg-[#162850] text-blue-200 text-xs font-bold border border-blue-500/30 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e293b] hover:bg-[#334155] text-slate-200 hover:text-white text-xs font-bold border border-[#475569] transition-colors cursor-pointer uppercase tracking-wider"
                   >
-                    <ArrowUpDown className="w-3.5 h-3.5 text-yellow-400" />
+                    <ArrowUpDown className="w-3.5 h-3.5 text-yellow-400 stroke-[2.5]" />
                     Matchup Lab
                   </button>
 
@@ -659,17 +655,17 @@ export default function Pokedex({
                         setSelectedPokemon(null);
                         onAskAboutPokemon(target);
                       }}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-yellow-400 to-amber-400 hover:from-yellow-300 hover:to-amber-300 text-slate-950 text-xs font-black transition-colors cursor-pointer shadow-md shadow-yellow-400/20"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-black transition-colors cursor-pointer uppercase tracking-wider border border-yellow-500"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-                      Ask Battle Coach
+                      Pokédex Research AI
                     </button>
                   )}
                 </div>
 
                 <button
                   onClick={() => setSelectedPokemon(null)}
-                  className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold cursor-pointer"
+                  className="px-3 py-1.5 bg-[#334155] hover:bg-slate-600 text-white text-xs font-bold border border-slate-500 cursor-pointer uppercase tracking-wider"
                 >
                   Close
                 </button>
