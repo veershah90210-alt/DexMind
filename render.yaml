@@ -16,8 +16,8 @@ services:
         sync: false
       - key: LLM_MODEL
         value: gemini-2.5-flash
-      - key: EMBEDDING_MODEL
-        value: sentence-transformers/all-MiniLM-L6-v2
+      - key: DISABLE_LOCAL_EMBEDDINGS
+        value: "true"
       - key: VECTOR_INDEX_NAME
         value: dex_vector_index
       - key: TEXT_INDEX_NAME
