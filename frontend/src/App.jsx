@@ -12,6 +12,7 @@ export default function App() {
   const [healthInfo, setHealthInfo] = useState(null);
   const [activeCitation, setActiveCitation] = useState(null);
   const [compareSelection, setCompareSelection] = useState([]);
+  const [initialQuery, setInitialQuery] = useState('');
 
   const loadHealth = async () => {
     try {
@@ -45,27 +46,35 @@ export default function App() {
     });
   };
 
+  const handleSelectPrompt = (prompt) => {
+    setInitialQuery(prompt);
+    setActiveTab('ask');
+  };
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-red-500/30 selection:text-red-200">
-      {/* Top Navigation */}
+    <div className="min-h-screen bg-[#090a10] text-zinc-100 flex flex-col font-sans selection:bg-red-500/25 selection:text-red-200">
+      {/* Top Floating / Blurred Navigation */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         healthInfo={healthInfo}
+        onQuickSearch={() => setActiveTab('pokedex')}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
         {activeTab === 'dashboard' && (
           <Home
             healthInfo={healthInfo}
             refreshHealth={loadHealth}
             setActiveTab={setActiveTab}
+            onSelectPrompt={handleSelectPrompt}
           />
         )}
 
         {activeTab === 'ask' && (
           <AskDex
+            initialQuery={initialQuery}
             onCitationClick={(source) => setActiveCitation(source)}
           />
         )}
@@ -75,6 +84,10 @@ export default function App() {
             onSelectForCompare={handleSelectForCompare}
             compareSelection={compareSelection}
             setActiveTab={setActiveTab}
+            onAskAboutPokemon={(p) => {
+              setInitialQuery(`Tell me about ${p.name}, its stats, and best battle strategies.`);
+              setActiveTab('ask');
+            }}
           />
         )}
 
@@ -92,9 +105,23 @@ export default function App() {
         onClose={() => setActiveCitation(null)}
       />
 
-      {/* Minimal Footer */}
-      <footer className="border-t border-zinc-900 py-4 text-center text-xs text-zinc-600 font-mono">
-        DexMind MVP — Functional RAG Pokédex • PokéAPI • MongoDB Atlas Vector Search • Gemini API
+      {/* Minimal Tech Stack Footer */}
+      <footer className="border-t border-white/[0.06] py-5 mt-auto bg-[#090a10]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 font-mono">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500/80" />
+            <span className="text-zinc-400 font-bold">DexMind</span>
+            <span>— Canonical Retrieval-Augmented Generation Platform</span>
+          </div>
+
+          <div className="flex items-center gap-4 text-[11px]">
+            <span>MongoDB Atlas Vector Search</span>
+            <span>•</span>
+            <span>all-MiniLM-L6-v2 (384-d)</span>
+            <span>•</span>
+            <span>Gemini API</span>
+          </div>
+        </div>
       </footer>
     </div>
   );

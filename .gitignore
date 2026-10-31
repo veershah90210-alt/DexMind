@@ -48,6 +48,7 @@ env.bak/
 venv.bak/
 
 # Testing & Coverage
+.playwright-cli/
 .pytest_cache/
 .coverage
 .coverage.*
