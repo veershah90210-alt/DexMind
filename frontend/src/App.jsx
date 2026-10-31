@@ -106,12 +106,12 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'ask' && (
+        <div className={activeTab === 'ask' ? 'block' : 'hidden'}>
           <AskDex
             initialQuery={initialQuery}
             onCitationClick={(source) => setActiveCitation(source)}
           />
-        )}
+        </div>
 
         {activeTab === 'pokedex' && (
           <Pokedex

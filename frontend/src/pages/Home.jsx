@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import pokemonLogo from '../assets/pokemon-logo.svg';
 import PokeBall from '../components/PokeBall';
+import KantoPokedexDevice from '../components/KantoPokedexDevice';
 
 const FEATURED_CHAMPIONS = [
   {
@@ -181,26 +182,9 @@ export default function Home({ healthInfo, setActiveTab }) {
             </div>
           </div>
 
-          {/* Right Column: Dynamic Sugimori Artwork Showcase with Pokédex Screen Frame */}
-          <div className="lg:col-span-4 relative hidden lg:flex items-center justify-center bg-[#0f172a] border-2 border-[#334155] p-6 min-h-[260px]">
-            {/* Top Pokédex Screen status label */}
-            <div className="absolute top-3 left-3 z-20 bg-[#dc2626] text-white text-xs font-mono font-bold px-2.5 py-1 border border-slate-950 uppercase tracking-wider">
-              No. 0006 & No. 0025
-            </div>
-
-            {/* Official Charizard Artwork */}
-            <img
-              src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png"
-              alt="Charizard"
-              className="w-48 h-48 object-contain absolute -top-4 -right-1 select-none pointer-events-none drop-shadow-lg"
-            />
-
-            {/* Official Pikachu Artwork */}
-            <img
-              src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
-              alt="Pikachu"
-              className="w-36 h-36 object-contain absolute bottom-1 left-3 z-10 select-none pointer-events-none drop-shadow-md"
-            />
+          {/* Right Column: Authentic Kanto Pokédex Hardware Unit */}
+          <div className="lg:col-span-4 relative hidden lg:flex items-center justify-center p-2">
+            <KantoPokedexDevice />
           </div>
         </div>
       </div>
@@ -242,12 +226,12 @@ export default function Home({ healthInfo, setActiveTab }) {
                 </span>
               </div>
 
-              {/* Artwork */}
-              <div className="w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center my-2 relative z-10 bg-[#0f172a]/40 border border-[#334155]/50 p-2">
+              {/* Artwork - Large Hero Sized, Completely Transparent / No Dark Box */}
+              <div className="w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center my-2 relative z-10">
                 <img
                   src={p.sprite}
                   alt={p.name}
-                  className="w-20 h-20 sm:w-24 sm:h-24 object-contain group-hover:scale-110 transition-transform duration-200 select-none drop-shadow-md"
+                  className="w-36 h-36 sm:w-44 sm:h-44 object-contain group-hover:scale-110 transition-transform duration-200 select-none drop-shadow-xl"
                 />
               </div>
 

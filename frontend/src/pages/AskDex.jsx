@@ -79,22 +79,47 @@ function FormattedMessage({ text }) {
   );
 }
 
+const DEFAULT_WELCOME_MESSAGE = {
+  id: 'welcome',
+  role: 'assistant',
+  text: "Greetings Trainer. I am DexMind, your Battle Strategist and National Pokédex Intelligence. Inquire about base statistics, competitive battle matchups, counters, abilities, or team compositions across all 9 Generations.",
+  sources: [],
+  is_unanswerable: false,
+};
+
 export default function AskDex({ onCitationClick, initialQuery }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      text: "Greetings Trainer. I am DexMind, your Battle Strategist and National Pokédex Intelligence. Inquire about base statistics, competitive battle matchups, counters, abilities, or team compositions across all 9 Generations.",
-      sources: [],
-      is_unanswerable: false,
-    },
-  ]);
+  // Store and restore conversation when going to a different section and coming back
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dexmind_active_conversation');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to restore conversation:', err);
+    }
+    return [DEFAULT_WELCOME_MESSAGE];
+  });
+
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [copiedMsgId, setCopiedMsgId] = useState(null);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const lastProcessedInitialQuery = useRef('');
+
+  // Persist conversation updates
+  useEffect(() => {
+    try {
+      localStorage.setItem('dexmind_active_conversation', JSON.stringify(messages));
+    } catch (err) {
+      console.warn('Failed to save conversation:', err);
+    }
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -114,6 +139,23 @@ export default function AskDex({ onCitationClick, initialQuery }) {
       text: query,
     };
 
+    // 1. Single letter query check: Never throw error, gracefully explain message was not understood
+    if (query.length <= 1) {
+      setMessages((prev) => [
+        ...prev,
+        userMessage,
+        {
+          id: `a-${Date.now()}`,
+          role: 'assistant',
+          text: "Transmission incomplete or not understood. Single-character inputs are too short to identify a Pokémon record. Please specify a Pokémon name, move, type matchup, or battle inquiry (e.g., **Charizard**, **Pikachu counters**, or **Best Water types**).",
+          sources: [],
+          is_unanswerable: false,
+        },
+      ]);
+      setInputQuery('');
+      return;
+    }
+
     // Extract recent conversation history for context memory (last 6 valid turns)
     const historyPayload = messages
       .filter((m) => m.id !== 'welcome' && !m.is_error && m.text)
@@ -130,39 +172,133 @@ export default function AskDex({ onCitationClick, initialQuery }) {
     try {
       const data = await askQuestion(query, null, historyPayload);
 
+      let finalText = data.answer || '';
+      let finalSources = data.sources || [];
+      let finalUnanswerable = Boolean(data.is_unanswerable);
+
+      // 2. Mixed Query Handling: Part of chat is correct, other half is wrong/out of context
+      const detectedEntities = data.retrieval_meta?.entities_detected || [];
+      const hasAbstention =
+        finalText.toLowerCase().includes("couldn't verify this information") ||
+        finalText.toLowerCase().includes("cannot verify this information") ||
+        finalText.toLowerCase().includes("does not contain the required");
+
+      if (detectedEntities.length > 0 && hasAbstention) {
+        // Extract the out-of-context or unrecognized subject name
+        const matchWrong = finalText.match(/does not contain the required\s+([^.\n]+?)\s+information/i);
+        const wrongTopic = matchWrong ? matchWrong[1].replace(/^\[|\]$/g, '').trim() : 'the non-canonical topic';
+
+        // Check if the backend already generated the valid Pokémon response after the abstention
+        const howeverIndex = finalText.indexOf('\n\nHowever,');
+        const secondaryHeaderIndex = howeverIndex !== -1 ? howeverIndex : finalText.indexOf('\n\n###');
+
+        if (secondaryHeaderIndex !== -1) {
+          // Backend already answered the valid Pokémon part; clean and emphasize out-of-context note
+          const validPart = finalText.slice(secondaryHeaderIndex).trim();
+          finalText = `> ⚠️ **Out of Context / Not Understood**: "${wrongTopic}" is outside the National Pokédex database.\n\n${validPart.replace(/^However,\s*/i, '')}`;
+          finalUnanswerable = false;
+        } else {
+          // Backend only output the abstention; query the valid detected Pokémon directly
+          try {
+            const entityDossier = await askQuestion(
+              `Provide battle overview, stats, type matchups, and abilities for ${detectedEntities.join(' and ')}`,
+              null,
+              historyPayload
+            );
+
+            if (entityDossier?.answer && !entityDossier.is_unanswerable) {
+              finalText = `> ⚠️ **Out of Context / Not Understood**: "${wrongTopic}" is outside the canonical Pokémon game records.\n\nHere is the verified tactical dossier for **${detectedEntities.join(' & ')}**:\n\n${entityDossier.answer}`;
+              finalSources = entityDossier.sources || [];
+              finalUnanswerable = false;
+            }
+          } catch (recoveryErr) {
+            console.warn('Entity follow-up recovery note:', recoveryErr);
+          }
+        }
+      }
+
       const botMessage = {
         id: `a-${Date.now()}`,
         role: 'assistant',
-        text: data.answer,
-        sources: data.sources || [],
-        is_unanswerable: data.is_unanswerable,
+        text: finalText,
+        sources: finalSources,
+        is_unanswerable: finalUnanswerable,
         retrieval_meta: data.retrieval_meta,
       };
 
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
-      const errorMessage = {
-        id: `err-${Date.now()}`,
-        role: 'assistant',
-        text: `Unable to access Pokédex archives: ${err.message || 'Please check your connection and try again.'}`,
-        sources: [],
-        is_error: true,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      const errStr = String(err.message || '');
+      const isShortQueryError = errStr.includes('string_too_short') || errStr.includes('at least 2 characters');
+
+      if (isShortQueryError) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a-${Date.now()}`,
+            role: 'assistant',
+            text: "Your message was not understood or too short. Please enter a more complete inquiry (e.g., 'Tell me about Pikachu' or 'Who counters Charizard?').",
+            sources: [],
+            is_unanswerable: false,
+          },
+        ]);
+      } else {
+        // Check if query had a recognizable Pokémon entity that can still be answered
+        const knownKanto = [
+          'pikachu', 'charizard', 'blastoise', 'venusaur', 'mewtwo', 'mew', 'gengar',
+          'lucario', 'garchomp', 'eevee', 'snorlax', 'dragonite', 'gyarados', 'alakazam',
+          'machamp', 'arcanine', 'lapras', 'zapdos', 'articuno', 'moltres', 'raichu'
+        ];
+        const lowerQ = query.toLowerCase();
+        const foundPokemon = knownKanto.filter((p) => lowerQ.includes(p));
+
+        if (foundPokemon.length > 0) {
+          try {
+            const fallbackData = await askQuestion(
+              `Provide battle overview, stats, and type matchups for ${foundPokemon.join(' and ')}`
+            );
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: `a-${Date.now()}`,
+                role: 'assistant',
+                text: `> ⚠️ **Out of Context / Not Understood**: Part of your query could not be processed.\n\nHere is the verified tactical record for **${foundPokemon.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' & ')}**:\n\n${fallbackData.answer}`,
+                sources: fallbackData.sources || [],
+                is_unanswerable: false,
+              },
+            ]);
+            return;
+          } catch (fallbackErr) {
+            // fallback to friendly response below
+          }
+        }
+
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err-${Date.now()}`,
+            role: 'assistant',
+            text: `Transmission not understood or temporarily unavailable: ${err.message || 'Please clarify your question and try again.'}`,
+            sources: [],
+            is_error: true,
+          },
+        ]);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // If an initialQuery is passed (from dashboard chip), send it automatically
+  // If an initialQuery is passed (from dashboard chip or Pokedex), send it automatically
   useEffect(() => {
-    if (initialQuery && initialQuery.trim()) {
+    if (initialQuery && initialQuery.trim() && initialQuery !== lastProcessedInitialQuery.current) {
+      lastProcessedInitialQuery.current = initialQuery;
       handleSend(initialQuery);
     }
   }, [initialQuery]);
 
   const handleClearChat = () => {
-    setMessages([
+    const resetSession = [
       {
         id: 'welcome',
         role: 'assistant',
@@ -170,7 +306,11 @@ export default function AskDex({ onCitationClick, initialQuery }) {
         sources: [],
         is_unanswerable: false,
       },
-    ]);
+    ];
+    setMessages(resetSession);
+    try {
+      localStorage.setItem('dexmind_active_conversation', JSON.stringify(resetSession));
+    } catch (err) {}
   };
 
   const handleCopyMessage = async (msgId, text) => {

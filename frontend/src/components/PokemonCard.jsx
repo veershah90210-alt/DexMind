@@ -89,7 +89,7 @@ export default function PokemonCard({
       </div>
 
       {/* Official Artwork Display - Prominent & Large */}
-      <div className="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center my-2 relative z-10 bg-[#0f172a]/50 border border-[#334155]/60 p-2">
+      <div className="w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center my-2 relative z-10">
         <img
           src={imgSrc}
           alt={pokemon.name}
