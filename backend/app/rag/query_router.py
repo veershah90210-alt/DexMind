@@ -121,9 +121,16 @@ def route_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> Q
         if re.search(pattern, query_lower):
             found_pokemon.append(p.capitalize())
 
-    # Check for comparison
-    comparison_keywords = ["compare", "vs", "versus", "better than", "difference between", "stronger than", "or "]
-    is_comparison = len(found_pokemon) >= 2 or any(k in query_lower for k in comparison_keywords)
+    # Detect team building and counter strategy intents
+    team_keywords = ["team", "assemble", "build a team", "build me a team", "squad", "roster", "lineup"]
+    counter_keywords = ["beat", "counter", "counters", "defeat", "win against", "best against", "counters for", "who can beat", "how to defeat", "matchup against", "take down", "deal with", "check"]
+    is_team = any(k in query_lower for k in team_keywords)
+    is_counter = any(k in query_lower for k in counter_keywords)
+
+    # Check for comparison (only when NOT team building or counter strategy)
+    comparison_keywords = ["compare", "vs", "versus", "better than", "difference between", "stronger than"]
+    has_comparison_keyword = any(k in query_lower for k in comparison_keywords)
+    is_comparison = not (is_team or is_counter) and (has_comparison_keyword or (len(found_pokemon) == 2 and (" or " in query_lower or " vs " in query_lower)))
 
     # Detect category and content type filter
     category = "general"
@@ -134,12 +141,18 @@ def route_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> Q
         matches.append(("evolution", "evolution"))
     if any(k in query_lower for k in ["ability", "abilities", "hidden ability", "effect of"]):
         matches.append(("ability", "ability"))
-    if any(k in query_lower for k in ["type", "weakness", "weak to", "resist", "immune", "effectiveness", "damage from", "beat", "defeat", "super effective"]):
+    if any(k in query_lower for k in ["type", "weakness", "weak to", "resist", "immune", "effectiveness", "damage from", "super effective", "double damage", "half damage"]):
         matches.append(("type_analysis", "type_matchup"))
-    if any(k in query_lower for k in ["stat", "stats", "base stat", "hp", "attack", "defense", "speed", "special attack"]):
+    if any(k in query_lower for k in ["stat", "stats", "base stat", "hp", "attack", "defense", "speed", "special attack", "bst"]):
         matches.append(("stats", "overview_stats"))
 
-    if is_comparison and len(found_pokemon) >= 2:
+    if is_team:
+        category = "team_building"
+        content_type_filter = None
+    elif is_counter:
+        category = "counter_strategy"
+        content_type_filter = None
+    elif is_comparison and len(found_pokemon) >= 2:
         category = "comparison"
         content_type_filter = None
     elif len(matches) == 1:
@@ -153,7 +166,21 @@ def route_query(query: str, history: Optional[List[Dict[str, str]]] = None) -> Q
 
     # Construct targeted sub-queries
     sub_queries = []
-    if category == "comparison" and len(found_pokemon) >= 2:
+    if category in ["team_building", "counter_strategy"] and found_pokemon:
+        # 1. Targeted sub-query for each opponent's weaknesses and stats
+        for p in found_pokemon:
+            sub_queries.append({
+                "entity": p,
+                "text": f"{p} type weaknesses battle matchups stats",
+                "filter": {"pokemon_name": p}
+            })
+        # 2. General counter search query across Kanto
+        sub_queries.append({
+            "entity": None,
+            "text": f"Pokemon battle counter offensive advantages against {' '.join(found_pokemon)}",
+            "filter": {"content_type": "type_matchup"}
+        })
+    elif category == "comparison" and len(found_pokemon) >= 2:
         # Entity-independent sub-queries for multi-entity comparison
         for p in found_pokemon:
             sub_queries.append({

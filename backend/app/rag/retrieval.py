@@ -1,8 +1,9 @@
+import re
 import logging
 from typing import List, Dict, Any, Optional
 from pymongo.errors import OperationFailure
 from app.config import VECTOR_INDEX_NAME, TEXT_INDEX_NAME
-from app.database import get_dex_chunks_col
+from app.database import get_dex_chunks_col, get_pokemon_col
 from app.rag.embeddings import embed_text
 from app.rag.reranking import reciprocal_rank_fusion
 from app.rag.query_router import route_query, QueryAnalysis
@@ -161,44 +162,122 @@ def retrieve_evidence(
 ) -> Dict[str, Any]:
     """Orchestrates query understanding, multi-entity splitting, retrieval, and deduplication.
 
-    Returns structured evidence containing candidates and selected chunks.
+    For team building & counter queries, retrieves both opponent profiles and candidate counter Pokémon.
+    For multi-entity queries, uses balanced entity sampling to prevent starvation.
     """
     analysis: QueryAnalysis = route_query(query, history=history)
 
-    all_retrieved = []
+    selected_chunks = []
     seen_ids = set()
 
-    if analysis.is_comparison and len(analysis.sub_queries) >= 2:
-        # Multi-entity independent retrieval
-        logger.info(f"Comparison query detected between {analysis.pokemon_entities}. Retrieving evidence for each entity independently.")
+    # Case 1: Team building or counter strategy with specific target opponents
+    if analysis.category in ["team_building", "counter_strategy"] and analysis.pokemon_entities:
+        logger.info(f"Team building / counter query for opponents: {analysis.pokemon_entities}")
+        col = get_dex_chunks_col()
+        pcol = get_pokemon_col()
+
+        # Step 1: Balanced retrieval for each target opponent
+        opponent_chunks = []
+        for p in analysis.pokemon_entities:
+            p_filter = {"pokemon_name": p}
+            if metadata_filters:
+                p_filter = {**p_filter, **metadata_filters}
+            p_candidates = retrieve_for_subquery(f"{p} type weaknesses battle matchups stats", filter_dict=p_filter, candidate_limit=4)
+            # Prioritize type_matchup and overview_stats
+            p_candidates.sort(key=lambda x: (0 if x.get("content_type") == "type_matchup" else (1 if x.get("content_type") == "overview_stats" else 2)))
+            for c in p_candidates[:2]:
+                cid = str(c["_id"])
+                if cid not in seen_ids:
+                    seen_ids.add(cid)
+                    opponent_chunks.append(c)
+
+        # Step 2: Extract weakness types across all opponents
+        weakness_types = set()
+        for c in opponent_chunks:
+            if c.get("content_type") == "type_matchup":
+                m = re.search(r'Weak to.*?:\s*([^.\n]+)', c.get("content", ""))
+                if m:
+                    found_types = re.findall(
+                        r'\b(Normal|Fire|Water|Grass|Electric|Ice|Fighting|Poison|Ground|Flying|Psychic|Bug|Rock|Ghost|Dragon|Steel|Dark|Fairy)\b',
+                        m.group(1),
+                        re.I
+                    )
+                    for t in found_types:
+                        weakness_types.add(t.capitalize())
+
+        # Step 3: Find top candidate counter Pokémon for extracted weaknesses
+        counter_chunks = []
+        if weakness_types:
+            # Score weaknesses by how many opponents they threaten
+            type_hit_counts = {}
+            for w in weakness_types:
+                type_hit_counts[w] = 0
+                for c in opponent_chunks:
+                    if c.get("content_type") == "type_matchup" and w in c.get("content", ""):
+                        type_hit_counts[w] += 1
+            sorted_weaknesses = sorted(weakness_types, key=lambda w: type_hit_counts.get(w, 0), reverse=True)
+
+            for w in sorted_weaknesses:
+                matching_pokes = list(pcol.find({'types': w}, {'name': 1, 'stats.total': 1}).sort('stats.total', -1).limit(4))
+                for mp in matching_pokes:
+                    pname = mp['name']
+                    if pname not in analysis.pokemon_entities:
+                        c_chunk = col.find_one({'pokemon_name': pname, 'content_type': 'type_matchup'})
+                        if c_chunk and str(c_chunk["_id"]) not in seen_ids:
+                            seen_ids.add(str(c_chunk["_id"]))
+                            counter_chunks.append(c_chunk)
+                            break
+                if len(counter_chunks) >= 4:
+                    break
+
+        selected_chunks = opponent_chunks + counter_chunks
+
+    # Case 2: Multi-entity comparison or multi-pokemon lookup (balanced round-robin)
+    elif len(analysis.pokemon_entities) >= 2:
+        logger.info(f"Multi-entity query detected for {analysis.pokemon_entities}. Using balanced entity allocation.")
+        entity_buckets = {p: [] for p in analysis.pokemon_entities}
         for sq in analysis.sub_queries:
             sub_filter = sq["filter"]
             if metadata_filters:
                 sub_filter = {**sub_filter, **metadata_filters}
-            # Retrieve 4-5 top chunks per entity
-            entity_chunks = retrieve_for_subquery(sq["text"], filter_dict=sub_filter, candidate_limit=5)
-            for c in entity_chunks:
-                cid = str(c["_id"])
-                if cid not in seen_ids:
-                    seen_ids.add(cid)
-                    all_retrieved.append(c)
+            entity_name = sq.get("entity")
+            candidates = retrieve_for_subquery(sq["text"], filter_dict=sub_filter, candidate_limit=4)
+            if entity_name and entity_name in entity_buckets:
+                entity_buckets[entity_name].extend(candidates)
+            else:
+                for c in candidates:
+                    pname = c.get("pokemon_name")
+                    if pname in entity_buckets:
+                        entity_buckets[pname].append(c)
+
+        # Round-robin take top 2-3 per entity
+        for round_idx in range(3):
+            for p in analysis.pokemon_entities:
+                bucket = entity_buckets.get(p, [])
+                if round_idx < len(bucket):
+                    c = bucket[round_idx]
+                    cid = str(c["_id"])
+                    if cid not in seen_ids:
+                        seen_ids.add(cid)
+                        selected_chunks.append(c)
+            if len(selected_chunks) >= 10:
+                break
+
+    # Case 3: Standard single entity or general query
     else:
-        # Standard query
         sub_filter = analysis.sub_queries[0]["filter"] if analysis.sub_queries else {}
         if metadata_filters:
             sub_filter = {**sub_filter, **metadata_filters}
         query_text = analysis.sub_queries[0]["text"] if analysis.sub_queries else query
 
-        # Retrieve 10 candidates
         candidates = retrieve_for_subquery(query_text, filter_dict=sub_filter, candidate_limit=10)
         for c in candidates:
             cid = str(c["_id"])
             if cid not in seen_ids:
                 seen_ids.add(cid)
-                all_retrieved.append(c)
-
-    # Select approximately 5-8 relevant chunks
-    selected_chunks = all_retrieved[:8]
+                selected_chunks.append(c)
+                if len(selected_chunks) >= 8:
+                    break
 
     # Assign clear source identifiers [S1], [S2], ...
     for idx, c in enumerate(selected_chunks, start=1):
@@ -206,6 +285,6 @@ def retrieve_evidence(
 
     return {
         "analysis": analysis.to_dict(),
-        "total_candidates": len(all_retrieved),
+        "total_candidates": len(selected_chunks),
         "selected_chunks": selected_chunks
     }
