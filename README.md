@@ -1,4 +1,4 @@
-# ⚡ DexMind — An Intelligent Pokémon Discovery & Battle Intelligence Platform
+#  DexMind — An Intelligent Pokémon Discovery & Battle Intelligence Platform
 
 <div align="center">
 
@@ -15,7 +15,7 @@
     <em>"Don't just search your Pokédex. Talk to it."</em>
   </p>
 </div>
->>>>>>> 26dc549671cfbe6bd48b2d0cfe23486a5234d947
+
 
 ---
 
@@ -31,7 +31,7 @@
 =======
 * **Production Web App**: [https://dex-mind-pied.vercel.app/](https://dex-mind-pied.vercel.app/)
 * **Project Repository**: [https://github.com/veershah90210-alt/DexMind/](https://github.com/veershah90210-alt/DexMind/)
->>>>>>> 26dc549671cfbe6bd48b2d0cfe23486a5234d947
+
 
 ---
 
@@ -167,7 +167,7 @@ Traditional Pokédex tools are static reference manuals: looking up base stats, 
 ### 4. 🗂️ Unified National Pokédex Explorer
 * **High-Performance Grid**: Instant filtering across elemental types, generation selectors (Gen 1 through Gen 9), and instant text search by name or National Dex number.
 * **Official Visual Assets**: Integrated official Ken Sugimori transparent artwork, Dream World SVGs, high-resolution sprites, base stat distributions, abilities (including hidden abilities), and branching evolution paths.
->>>>>>> 26dc549671cfbe6bd48b2d0cfe23486a5234d947
+
 
 ---
 
