@@ -1,4 +1,4 @@
-# ⚡ DexMind — An Intelligent Pokémon Discovery & Battle Intelligence Platform
+#  DexMind — An Intelligent Pokémon Discovery & Battle Intelligence Platform
 
 <div align="center">
 
@@ -15,13 +15,13 @@
     <em>"Don't just search your Pokédex. Talk to it."</em>
   </p>
 </div>
->>>>>>> 26dc549671cfbe6bd48b2d0cfe23486a5234d947
+
 
 ---
 
 ## 🌐 Live Deployment & Preview
 
-<<<<<<< HEAD
+
 * **🧠 Strictly Grounded RAG Q&A**: Answers are generated exclusively from verified PokéAPI documentation. Every tactical assertion, stat comparison, and ability detail is mapped to explicit citation markers (e.g., `[S1]`, `[S2]`).
 * **🔍 Interactive Evidence Inspector**: Click any citation badge to open a detailed modal showing the exact retrieved chunk, content category (`overview_stats`, `type_matchup`, `ability`, `evolution`, `pokedex_entry`), version group, and PokéAPI source URL.
 * **🛡️ Hallucination & Abstention Guardrails**: If asked about unindexed out-of-scope topics (e.g., anime voice actors, TCG card values) or non-canonical queries, DexMind explicitly abstains instead of fabricating answers.
@@ -31,13 +31,13 @@
 =======
 * **Production Web App**: [https://dex-mind-pied.vercel.app/](https://dex-mind-pied.vercel.app/)
 * **Project Repository**: [https://github.com/veershah90210-alt/DexMind/](https://github.com/veershah90210-alt/DexMind/)
->>>>>>> 26dc549671cfbe6bd48b2d0cfe23486a5234d947
+
 
 ---
 
 ## 📖 Executive Summary
 
-<<<<<<< HEAD
+
 | Domain | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Frontend** | React 19, Vite, Tailwind CSS v4 | High-contrast, zero-border-radius tactical Pokédex UI |
@@ -167,13 +167,12 @@ Traditional Pokédex tools are static reference manuals: looking up base stats, 
 ### 4. 🗂️ Unified National Pokédex Explorer
 * **High-Performance Grid**: Instant filtering across elemental types, generation selectors (Gen 1 through Gen 9), and instant text search by name or National Dex number.
 * **Official Visual Assets**: Integrated official Ken Sugimori transparent artwork, Dream World SVGs, high-resolution sprites, base stat distributions, abilities (including hidden abilities), and branching evolution paths.
->>>>>>> 26dc549671cfbe6bd48b2d0cfe23486a5234d947
+
 
 ---
 
 ## 🏗️ Technical Architecture & Pipeline
 
-<<<<<<< HEAD
 ### Backend (`backend/.env`)
 
 Create a `.env` file inside the `backend/` directory:
